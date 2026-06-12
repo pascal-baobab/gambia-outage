@@ -7,6 +7,7 @@ export type Route =
   | { name: 'list' }
   | { name: 'zone'; id: string }
   | { name: 'about' }
+  | { name: 'project' }
   | { name: 'community' }
   | { name: 'talk' }
   | { name: 'honors' }
@@ -22,6 +23,7 @@ function parse(hash: string): Route {
   const head = parts[0] ?? 'home'
   if (head === 'list') return { name: 'list' }
   if (head === 'about') return { name: 'about' }
+  if (head === 'project') return { name: 'project' }
   if (head === 'community') return { name: 'community' }
   if (head === 'talk') return { name: 'talk' }
   if (head === 'honors') return { name: 'honors' }
@@ -44,6 +46,9 @@ export function navigate(route: Route): void {
       break
     case 'about':
       window.location.hash = '#/about'
+      break
+    case 'project':
+      window.location.hash = '#/project'
       break
     case 'community':
       window.location.hash = '#/community'

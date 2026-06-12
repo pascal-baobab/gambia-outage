@@ -27,6 +27,7 @@ import { HomeScreen } from '@/screens/HomeScreen'
 import { ListScreen } from '@/screens/ListScreen'
 import { ZoneScreen } from '@/screens/ZoneScreen'
 import { AboutScreen } from '@/screens/AboutScreen'
+import { ProjectScreen } from '@/screens/ProjectScreen'
 import { ProfileScreen } from '@/screens/ProfileScreen'
 import { MapScreen } from '@/screens/MapScreen'
 import { NewsScreen } from '@/screens/NewsScreen'
@@ -315,8 +316,12 @@ function Shell() {
             onReport={(action) => openReport(action, null)}
             onInstall={() => setInstallOpen(true)}
             onProfile={() => navigate({ name: 'profile' })}
+            onProject={() => navigate({ name: 'project' })}
             installed={pwa.installed}
           />
+        )}
+        {route.name === 'project' && (
+          <ProjectScreen onBack={() => navigate({ name: 'about' })} />
         )}
         {route.name === 'profile' && <ProfileScreen />}
         {route.name === 'map' && (

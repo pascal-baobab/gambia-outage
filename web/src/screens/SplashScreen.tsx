@@ -224,6 +224,7 @@ export function SplashScreen({
 
         {/* At the END of the animation (settled frame) we announce the exact build the user is now on. */}
         <div className="url">{revealed ? t.splash.updatedMessage(APP_VERSION, APP_VERSION_DATE) : `${t.splash.siteLabel} · v${APP_VERSION}`}</div>
+        <div className="url" style={{ marginTop: 3, opacity: 0.62, letterSpacing: 0.5 }}>{t.splash.openSource}</div>
       </div>
 
       {/* ── Functional actions — fade in once the animation settles ─────────── */}

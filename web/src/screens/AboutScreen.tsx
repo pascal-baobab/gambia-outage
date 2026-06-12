@@ -30,12 +30,14 @@ export function AboutScreen({
   onReport,
   onInstall,
   onProfile,
+  onProject,
   installed,
 }: {
   onBack: () => void
   onReport: (action: 'out' | 'back') => void
   onInstall: () => void
   onProfile?: () => void
+  onProject?: () => void
   installed: boolean
 }) {
   const t = useT()
@@ -63,6 +65,18 @@ export function AboutScreen({
         <Block icon="clock" title={t.about.statsTitle}>{t.about.statsBody}</Block>
         <Block icon="lock" title={t.about.anonTitle}>{t.about.anonBody}</Block>
         <Block icon="info" title={t.about.neutralTitle}>{t.about.neutralBody}</Block>
+        <Block icon="shield" title={t.about.osTitle}>
+          {t.about.osBody}
+          {onProject && (
+            <button
+              onClick={onProject}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '11px 13px', marginTop: 12, borderRadius: 12, background: GPT_T.wash, border: 'none', color: GPT_T.ink, fontFamily: GPT_FONT, fontSize: 14.5, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'start' }}
+            >
+              <span>{t.about.osLink}</span>
+              <GPTIcon name="chevron" size={16} color={GPT_T.ink45} />
+            </button>
+          )}
+        </Block>
 
         <button
           onClick={() => { if (!installed) onInstall() }}

@@ -204,7 +204,10 @@ function App() {
                     onToggleAlert={() => toggleAlert(baseData.zones.find(z => z.id === zone.id) || zone)} />
                 )}
                 {view === 'about' && (
-                  <AboutScreen onBack={() => go(prev === 'about' ? 'home' : prev)} onReport={openReport} />
+                  <AboutScreen onBack={() => go(prev === 'about' ? 'home' : prev)} onReport={openReport} onProject={() => go('project')} />
+                )}
+                {view === 'project' && (
+                  <ProjectScreen onBack={() => go(prev === 'project' ? 'about' : prev)} />
                 )}
 
                 {toast && <Toast tone={toast.tone} onClose={() => setToast(null)}>{toast.text}</Toast>}
@@ -274,6 +277,7 @@ function App() {
         <TweakButton label="Replay intro" onClick={() => { setFirstRun(true); setSplash(true); }} />
         <TweakButton label="Show loading skeletons" onClick={() => { setLoading(true); setTimeout(() => setLoading(false), 1600); }} />
         <TweakButton label="Open Wall of Honor" onClick={() => setHonors(true)} />
+        <TweakButton label="Open Project page" onClick={() => go('project')} />
       </TweaksPanel>
     </ThemeCtx.Provider>
   );

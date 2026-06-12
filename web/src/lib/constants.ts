@@ -7,6 +7,9 @@
 export const APP_VERSION = '0.119'
 export const APP_VERSION_DATE = '12 Jun 2026 · 09:43'
 
+/** Public open-source repository (AGPL-3.0). Shown in About + the Project page. */
+export const GITHUB_URL = 'https://github.com/pascal-baobab/gambia-outage'
+
 /** Distinct rl_key OUT reports (last 60 min) needed to mark a zone "confirmed". Mirrors features.jsx. */
 export const CONFIRM_THRESHOLD = 8
 

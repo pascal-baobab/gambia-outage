@@ -1,7 +1,7 @@
 // screen-about.jsx — About / Methodology + first-run GPS permission overlay
 // Exports: AboutScreen, FirstRunOverlay
 
-function AboutScreen({ onBack, onReport }) {
+function AboutScreen({ onBack, onReport, onProject }) {
   const th = useTheme();
   const Block = ({ icon, title, children }) => (
     <div style={{ padding: '16px 18px', borderBottom: `8px solid ${GPT_T.wash}`, background: GPT_T.paper }}>
@@ -41,6 +41,12 @@ function AboutScreen({ onBack, onReport }) {
         </Block>
         <Block icon="info" title="A note on neutrality">
           This is a neutral record, not a campaign. We report <b style={{ color: GPT_T.ink }}>what happened and when</b> — no accusations, no edits to make things look worse. The value of this map is that the numbers can be trusted by anyone, including the people responsible for fixing the grid.
+        </Block>
+        <Block icon="shield" title="Open source — check it yourself">
+          The code that runs this app is <b style={{ color: GPT_T.ink }}>public</b>. Anyone can read it and confirm that reporting really is anonymous — and that no company or government controls it. It’s released so it can never be locked up or taken over.
+          <button onClick={onProject} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '11px 13px', marginTop: 12, borderRadius: 12, background: GPT_T.wash, border: 'none', color: GPT_T.ink, fontFamily: GPT_FONT, fontSize: 14.5, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+            <span>About this project</span><GPTIcon name="chevron" size={16} color={GPT_T.ink45} />
+          </button>
         </Block>
 
         <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -195,7 +201,7 @@ function SplashScreen({ onDone, showGps = false }) {
         )}
         <div style={{ marginTop: 6, fontSize: 12.5, fontWeight: 700, color: GPT_T.panelInk60, letterSpacing: 0.4,
           animation: risen ? 'goSplUrl .5s ease-out .3s both' : 'none' }}>
-          gambiaoutage.com
+          gambiaoutage.com · open source
         </div>
       </div>
       {/* Functional actions — rise once the brand has risen */}

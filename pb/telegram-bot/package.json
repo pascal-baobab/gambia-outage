@@ -1,0 +1,15 @@
+{
+  "name": "gambia-outage-telegram-bot",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Telegram ingest sidecar — owner forwards links -> social_links -> 'From Facebook' feed.",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pocketbase": "^0.26.2"
+  }
+}

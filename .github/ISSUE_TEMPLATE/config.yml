@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Security or privacy issue
+    url: https://github.com/pascal-baobab/gambia-outage/security/advisories/new
+    about: Found a way to de-anonymize users or defeat the trust layer? Report it privately — see SECURITY.md. Please do NOT open a public issue.
+  - name: 💬 Questions & ideas
+    url: https://github.com/pascal-baobab/gambia-outage/discussions
+    about: General questions, ideas, and conversation belong in Discussions.

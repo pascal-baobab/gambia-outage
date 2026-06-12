@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# smoke-test.sh — final acceptance gate (prompt-claude-code.md §9). Asserts & fails loudly.
+# Default target = production. Local override:  PB_URL=http://127.0.0.1:8090 ./scripts/smoke-test.sh
+set -euo pipefail
+BASE="${BASE:-${PB_URL:-https://gambiaoutage.com}}"
+pass() { echo "  ✓ $1"; }
+fail() { echo "  ✗ $1"; exit 1; }
+echo "Gambia Outage · smoke test → $BASE"
+
+# 0. app shell (apex) returns 200
+CODE=$(curl -fsS -o /dev/null -w '%{http_code}' "$BASE/" || true)
+[ "$CODE" = "200" ] || fail "GET $BASE/ → $CODE (want 200)"
+pass "app shell 200"
+
+# 1. health
+curl -fsS "$BASE/api/health" >/dev/null || fail "GET /api/health"
+pass "health ok"
+
+# 2. snapshot has national + 7 macros
+SNAP=$(curl -fsS "$BASE/api/go/snapshot") || fail "GET /api/go/snapshot"
+echo "$SNAP" | grep -q '"national"' || fail "snapshot missing national"
+N=$(printf '%s' "$SNAP" | python3 -c "import sys,json;print(len(json.load(sys.stdin).get('macros',[])))")
+[ "$N" = "7" ] || fail "snapshot.macros=$N (want 7)"
+pass "snapshot: national + 7 macros"
+
+# 3. macro detail returns quarters
+MAC=$(curl -fsS "$BASE/api/go/macro/banjul") || fail "GET /api/go/macro/banjul"
+Q=$(printf '%s' "$MAC" | python3 -c "import sys,json;print(len(json.load(sys.stdin).get('quarters',[])))")
+[ "$Q" -ge 1 ] || fail "macro/banjul quarters=$Q (want ≥1)"
+pass "macro/banjul: $Q quarters"
+
+# 4. national numbers
+curl -fsS "$BASE/api/go/national" | grep -q '"regionsTotal"' || fail "GET /api/go/national"
+pass "national ok"
+
+# ── Phase 1+ (need the reports create hook: rl_key, merge, confirm, dedupe, close) ──
+echo "  … report→event · 8-key confirm · client_uuid dedupe · back→close · stats : Phase 1 (skipped)"
+
+# ── XP: report mints a grant, claim credits the ledger, profile/stats reflect it ──
+ZONE="kanifing-11"
+XP_NONCE="smoke-xp-$(date +%s)-abcdef0123456789"
+XP_ACC=$(printf 'b%.0s' $(seq 1 64))
+curl -s -X POST "$BASE/api/collections/reports/records" -H 'Content-Type: application/json' \
+  -d "{\"type\":\"out\",\"zone\":\"$ZONE\",\"source\":\"manual\",\"client_uuid\":\"smoke-xp-$(date +%s)\",\"claim_nonce\":\"$XP_NONCE\"}" >/dev/null
+XP1=$(curl -s -X POST "$BASE/api/go/xp/claim" -H 'Content-Type: application/json' \
+  -d "{\"account_id\":\"$XP_ACC\",\"claim_nonce\":\"$XP_NONCE\"}")
+echo "$XP1" | grep -q '"xp"' && pass "xp claim credited" || fail "xp claim"
+XPV1=$(echo "$XP1" | grep -o '"xp":[0-9]*' | head -1)
+XPV2=$(curl -s -X POST "$BASE/api/go/xp/claim" -H 'Content-Type: application/json' \
+  -d "{\"account_id\":\"$XP_ACC\",\"claim_nonce\":\"$XP_NONCE\"}" | grep -o '"xp":[0-9]*' | head -1)
+[ "$XPV1" = "$XPV2" ] && pass "xp claim idempotent" || fail "xp double-credit"
+curl -s "$BASE/api/go/stats" | grep -q '"contributors"' && pass "stats endpoint" || fail "stats"
+
+echo "Smoke test PASSED → $BASE"

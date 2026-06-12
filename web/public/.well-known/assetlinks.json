@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.gambiaoutage.twa",
+    "sha256_cert_fingerprints": ["61:35:C2:99:B8:91:5A:D1:6C:14:BF:22:37:C4:8C:BC:79:03:30:4C:D8:CA:08:1C:9E:31:07:1E:05:0F:65:EE"]
+  }
+}]

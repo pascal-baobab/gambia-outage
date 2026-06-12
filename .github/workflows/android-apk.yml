@@ -1,0 +1,149 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:          # run manually from GitHub UI
+  push:
+    tags: ['v*']              # run on version tags
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # ubuntu-latest has Android SDK; install the extra platforms we need
+      - name: Install Android SDK components
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-35" \
+            "platforms;android-36" \
+            "build-tools;34.0.0" \
+            2>/dev/null || true
+
+      - name: Install @bubblewrap/core
+        run: npm install --prefix /tmp/bw @bubblewrap/core@1.24.1
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > /tmp/gambia-outage.p12
+          # Convert PKCS12 → JKS so keytool/jarsigner can use it
+          keytool -importkeystore \
+            -srckeystore /tmp/gambia-outage.p12 -srcstoretype PKCS12 \
+            -srcstorepass "${{ secrets.KEYSTORE_PASS }}" \
+            -destkeystore /tmp/gambia-outage.jks -deststoretype JKS \
+            -deststorepass "${{ secrets.KEYSTORE_PASS }}" \
+            -srcalias gambia-outage -destalias gambia-outage \
+            -noprompt 2>/dev/null || true
+          # Keep both; apksigner will pick PKCS12 directly
+          cp /tmp/gambia-outage.p12 /tmp/gambia-outage.p12
+
+      - name: Read app version
+        id: version
+        run: |
+          VER=$(grep -oP "APP_VERSION = '\K[^']+" web/src/lib/constants.ts)
+          CODE=$(echo "$VER" | tr -d '.' | sed 's/^0*//')
+          echo "version=$VER" >> $GITHUB_OUTPUT
+          echo "code=${CODE:-1}" >> $GITHUB_OUTPUT
+
+      - name: Generate Android project
+        run: |
+          mkdir -p /tmp/android-project
+          node - <<'EOF'
+          const path = require('path');
+          const { TwaManifest, TwaGenerator, ConsoleLog } = require('/tmp/bw/node_modules/@bubblewrap/core');
+
+          async function main() {
+            const manifest = new TwaManifest({
+              packageId: 'com.gambiaoutage.twa',
+              host: 'gambiaoutage.com',
+              name: 'Gambia Outage — Report the Dark',
+              launcherName: 'Gambia Outage',
+              display: 'standalone',
+              orientation: 'portrait',
+              themeColor: '#0F1722',
+              themeColorDark: '#0F1722',
+              navigationColor: '#0F1722',
+              navigationColorDark: '#0F1722',
+              navigationDividerColor: '#0F1722',
+              navigationDividerColorDark: '#0F1722',
+              backgroundColor: '#0F1722',
+              startUrl: 'https://gambiaoutage.com/',
+              fullScopeUrl: 'https://gambiaoutage.com/',
+              webManifestUrl: 'https://gambiaoutage.com/manifest.webmanifest',
+              iconUrl: 'https://gambiaoutage.com/icons/icon-512.png',
+              maskableIconUrl: 'https://gambiaoutage.com/icons/icon-maskable-512.png',
+              monochromeIconUrl: '',
+              splashScreenFadeOutDuration: 300,
+              fallbackType: 'customtabs',
+              signingKey: { path: '/tmp/gambia-outage.p12', alias: 'gambia-outage' },
+              appVersion: process.env.APP_VERSION || '0.92',
+              appVersionCode: parseInt(process.env.APP_VERSION_CODE || '92'),
+              minSdkVersion: 21,
+              enableNotifications: false,
+              enableSiteSettingsShortcut: true,
+              isChromeOSOnly: false,
+              isMetaQuest: false,
+              shortcuts: [],
+              generatorApp: 'gambiaoutage-build',
+              features: { locationDelegation: { enabled: true }, playBilling: { enabled: false } },
+              alphaDependencies: { enabled: false },
+              fingerprints: [],
+              additionalTrustedOrigins: [],
+              retainedBundles: [],
+              displayOverride: [],
+            });
+            const gen = new TwaGenerator();
+            await gen.createTwaProject('/tmp/android-project', manifest, new ConsoleLog('build'));
+            console.log('Project generated.');
+          }
+          main().catch(e => { console.error(e); process.exit(1); });
+          EOF
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          APP_VERSION_CODE: ${{ steps.version.outputs.code }}
+
+      - name: Build APK (Gradle)
+        run: |
+          cd /tmp/android-project
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Sign APK
+        run: |
+          UNSIGNED=$(find /tmp/android-project/app/build -name "*unsigned*.apk" | head -1)
+          [ -z "$UNSIGNED" ] && UNSIGNED=$(find /tmp/android-project/app/build -name "*.apk" | head -1)
+          echo "Unsigned APK: $UNSIGNED"
+
+          # zipalign
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -f 4 "$UNSIGNED" /tmp/gambia-aligned.apk
+
+          # sign with apksigner
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+            --ks /tmp/gambia-outage.p12 \
+            --ks-type PKCS12 \
+            --ks-key-alias gambia-outage \
+            --ks-pass "pass:${{ secrets.KEYSTORE_PASS }}" \
+            --key-pass "pass:${{ secrets.KEYSTORE_PASS }}" \
+            --out /tmp/gambia-outage-${{ steps.version.outputs.version }}.apk \
+            /tmp/gambia-aligned.apk
+
+          echo "Signed APK ready."
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gambia-outage-${{ steps.version.outputs.version }}
+          path: /tmp/gambia-outage-${{ steps.version.outputs.version }}.apk
+          retention-days: 90

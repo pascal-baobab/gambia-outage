@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  web:
+    name: Web build & tests (incl. privacy invariants)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm -C web install --frozen-lockfile
+
+      - name: Test (includes community-anonymity invariants)
+        run: pnpm -C web test
+
+      - name: Build (fails on missing EN/FR/AR i18n key)
+        run: pnpm -C web build
+
+  guards:
+    name: Repo guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: No Italian in code/UI
+        run: |
+          # The app's language is English (The Gambia's official language).
+          # This catches accidental Italian left in source by contributors.
+          if grep -rniE '\b(perché|però|già|verità|quindi|anche se|adesso|carichiamo)\b' \
+               --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+               web/src pb/pb_hooks data; then
+            echo "::error::Italian text found in source — UI/code must be English."
+            exit 1
+          fi

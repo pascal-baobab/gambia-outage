@@ -1,0 +1,6 @@
+# gambiaoutage.com — public, community-run outage record.
+# Public pages are crawlable; the JSON API and the owner admin are not.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/

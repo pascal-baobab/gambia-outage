@@ -1,0 +1,33 @@
+name: 🗺️ Missing or wrong place
+description: A quarter, village or neighbourhood is missing or misnamed.
+labels: [zone-data, good first issue]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The app can only map places it knows about. If your area is missing or has the
+        wrong name, tell us here — no coding needed.
+  - type: input
+    id: place
+    attributes:
+      label: Place name
+      placeholder: The name people actually use locally
+    validations:
+      required: true
+  - type: input
+    id: region
+    attributes:
+      label: Region / nearest town
+      placeholder: e.g. West Coast Region, near Brikama
+    validations:
+      required: true
+  - type: input
+    id: coords
+    attributes:
+      label: Approximate location (optional)
+      placeholder: A Google Maps link or lat,lng if you have it
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      placeholder: Other spellings, nearby landmarks, whether it's currently shown under the wrong area…

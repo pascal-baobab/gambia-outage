@@ -1,0 +1,48 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+web/dist/
+*.tsbuildinfo
+pb/pb_public/*
+!pb/pb_public/.gitkeep
+
+# pocketbase runtime
+pb/pocketbase
+pb/pb_data/
+pb/pb_migrations/*.db
+
+# env & secrets (NEVER commit) — see .env.example
+.env
+.env.*
+!.env.example
+
+# logs / tmp
+*.log
+npm-debug.log*
+.cache/
+
+# editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# QA screenshots + browser automation artifacts
+qa-*.png
+qa-*.txt
+.playwright-mcp/
+
+# handoff backup archive (kept locally, not versioned)
+NAWEC.SUPERLUMO.COM_*.zip
+
+# local-only: claude runtime, marketing assets, screenshot tooling (not versioned)
+.claude/
+FB+SOCIAL/
+tooling/
+
+# Android TWA build artifacts (keystore + APK — never commit)
+deploy/android/keystore/
+deploy/android/output/
+deploy/android/node_modules/
+screenshots-desktop-*/

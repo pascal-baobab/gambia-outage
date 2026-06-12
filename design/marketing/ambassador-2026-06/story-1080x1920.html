@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GO · WhatsApp story 1080×1920</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Tokens lifted from design/ds.jsx — GPT_T, THEMES.standard, FLAG */
+  :root{
+    --panel:#0F1722; --panel-line:#27313F; --panel-ink:#F4F7FA; --panel-ink60:#9DAAB8;
+    --on:#E08A00; --on-deep:#8A5400; --on-line:#F2CF86; --on-bg:#FFF3D6;
+    --flag-red:#CE1126; --flag-blue:#0E50A0; --flag-green:#3A7728; --flag-white:#FFFFFF;
+    --display:'Anton', Impact, sans-serif;
+    --body:'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:540px;height:960px;overflow:hidden;background:var(--panel)}
+  .story{position:relative;width:540px;height:960px;background:var(--panel);font-family:var(--body);color:var(--panel-ink);overflow:hidden}
+
+  .flagbg{position:absolute;inset:-12%;opacity:.13;
+    background:linear-gradient(180deg,
+      var(--flag-red) 0 33.33%, var(--flag-white) 33.33% 38.89%,
+      var(--flag-blue) 38.89% 61.11%, var(--flag-white) 61.11% 66.67%,
+      var(--flag-green) 66.67% 100%);
+    transform:rotate(-7deg) scale(1.25)}
+  .scrim{position:absolute;inset:0;background:radial-gradient(130% 70% at 50% 6%, rgba(15,23,34,.5) 0%, rgba(15,23,34,.88) 58%, rgba(10,15,22,.98) 100%)}
+  .bolt-wm{position:absolute;left:-70px;bottom:-60px;width:430px;height:830px;opacity:.045;transform:rotate(9deg)}
+
+  .inner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;padding:34px 40px 0}
+
+  .brand{display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center}
+  .brand img{width:68px;height:68px;border-radius:50%;box-shadow:0 8px 30px rgba(0,0,0,.55)}
+  .brand .name{font-weight:800;font-size:21px;letter-spacing:3.4px}
+  .brand .name em{font-style:normal;color:var(--on-line)}
+  .brand .pay{font-size:11.5px;font-weight:700;letter-spacing:4.2px;color:var(--panel-ink60);text-transform:uppercase;margin-top:-6px}
+
+  .eyebrow{margin:18px auto 0;display:flex;align-items:center;gap:12px}
+  .eyebrow .bar{width:30px;height:4px;background:var(--on);border-radius:2px}
+  .eyebrow span{font-size:14px;font-weight:800;letter-spacing:3.2px;color:var(--on-line);text-transform:uppercase}
+
+  h1{font-family:var(--display);font-weight:400;text-align:center;text-transform:uppercase;margin-top:10px;line-height:.96}
+  h1 .l1{display:block;font-size:40px;letter-spacing:2px}
+  h1 .l2{display:block;font-size:80px;letter-spacing:1px;color:var(--on);text-shadow:0 0 50px rgba(224,138,0,.5)}
+
+  .sub{margin:13px auto 0;text-align:center;font-size:16px;font-weight:500;line-height:1.45;color:var(--panel-ink60);max-width:430px}
+  .sub b{color:var(--panel-ink);font-weight:700}
+
+  .map{margin:12px -14px 0;height:140px;position:relative}
+  .map svg{width:100%;height:100%;display:block}
+  .map .cap{position:absolute;right:22px;bottom:2px;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--panel-ink60);text-transform:uppercase}
+
+  .perks{margin:16px 0 0;display:flex;flex-direction:column;gap:10px}
+  .perk{display:flex;align-items:center;gap:14px;background:rgba(22,30,39,.78);border:1.5px solid var(--panel-line);border-radius:16px;padding:11px 16px}
+  .perk .ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .perk .ic.amber{background:rgba(224,138,0,.16);border:1.5px solid rgba(242,207,134,.4)}
+  .perk .ic.blue{background:rgba(14,80,160,.22);border:1.5px solid rgba(111,167,232,.35)}
+  .perk .ic.green{background:rgba(58,119,40,.22);border:1.5px solid rgba(122,190,98,.35)}
+  .perk .tx .t{font-size:16px;font-weight:800;letter-spacing:.3px}
+  .perk .tx .d{font-size:13px;font-weight:500;color:var(--panel-ink60);margin-top:2px}
+
+  .cta{position:absolute;bottom:0;left:0;right:0;z-index:3;background:rgba(8,12,18,.88);border-top:1px solid var(--panel-line);padding:16px 40px 0;text-align:center}
+  .btn{display:block;background:var(--on);color:#1A1206;border-radius:16px;padding:14px 0 12px;box-shadow:0 10px 36px rgba(224,138,0,.45)}
+  .btn .b{font-family:var(--display);font-size:27px;letter-spacing:2.2px;text-transform:uppercase}
+  .btn .u{font-size:14.5px;font-weight:800;letter-spacing:.6px;margin-top:1px}
+  .cta .foot{font-size:12px;font-weight:600;letter-spacing:.5px;color:var(--panel-ink60);margin:11px 0 13px}
+  .flagrule{display:flex;height:7px}
+  .flagrule i{display:block}
+  .flagrule .r{flex:6;background:var(--flag-red)}.flagrule .w{flex:.5;background:#fff}
+  .flagrule .bl{flex:4;background:var(--flag-blue)}.flagrule .g{flex:6;background:var(--flag-green)}
+</style>
+</head>
+<body>
+<div class="story">
+  <div class="flagbg"></div>
+  <div class="scrim"></div>
+  <svg class="bolt-wm" viewBox="0 0 24 44" aria-hidden="true">
+    <path d="M15 1 4 24h6.5L8 43l12-23h-7L15 1Z" fill="none" stroke="#F4F7FA" stroke-width="1"/>
+  </svg>
+
+  <div class="inner">
+    <div class="brand">
+      <img src="logo-circle.png" alt="">
+      <div class="name">GAMBIA <em>OUTAGE</em></div>
+      <div class="pay">Report the Dark</div>
+    </div>
+
+    <div class="eyebrow"><div class="bar"></div><span>First time ever in The Gambia</span><div class="bar"></div></div>
+    <h1><span class="l1">Become an</span><span class="l2">Ambassador</span></h1>
+
+    <p class="sub">When the power goes out, the whole country will see it — <b>live, quarter by quarter</b>. A clear picture of the grid that has <b>never existed before</b>. It starts with you.</p>
+
+    <div class="map">
+      <svg id="gmap" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid slice"></svg>
+      <div class="cap">55 quarters · 7 regions</div>
+    </div>
+
+    <div class="perks">
+      <div class="perk">
+        <div class="ic amber">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M13 2 4 13.6h6.2L9 22l9.4-11.2H12L13 2Z" fill="none" stroke="#F2CF86" stroke-width="2" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="tx"><div class="t">Founding Ambassador badge + 100 XP</div><div class="d">Instant, the moment you join</div></div>
+      </div>
+      <div class="perk">
+        <div class="ic blue">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 22s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12Z" fill="#6FA7E8"/><circle cx="12" cy="10" r="2.6" fill="#0F1722"/></svg>
+        </div>
+        <div class="tx"><div class="t">Your quarter, on the map</div><div class="d">Be the trusted voice when the lights go out — and come back</div></div>
+      </div>
+      <div class="perk">
+        <div class="ic green">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 3 5 5.6v5.2c0 4.3 2.9 7.6 7 9.2 4.1-1.6 7-4.9 7-9.2V5.6L12 3Z" fill="#7ABE62"/><path d="m8.6 12 2.4 2.4 4.4-4.6" fill="none" stroke="#0F1722" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="tx"><div class="t">Anonymous · free · no registration</div><div class="d">No account, no phone number — reports stay yours</div></div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <div class="btn">
+        <div class="b">Join now</div>
+        <div class="u">gambiaoutage.com</div>
+      </div>
+      <div class="foot">Open the link · tap <b>Ambassador</b> · light up your quarter</div>
+      <div class="flagrule"><i class="r"></i><i class="w"></i><i class="bl"></i><i class="w"></i><i class="g"></i></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Stylized Gambia map — geometry + phyllotaxis dots from design/ds.jsx (GambiaMap), recoloured
+// to the "lights coming on" amber narrative for the dark marketing surface.
+const COUNTRY='M14 72 C 40 60 64 64 96 72 C 150 84 200 64 252 70 C 296 75 330 68 348 80 C 354 84 354 90 348 94 C 330 104 296 100 252 96 C 200 92 150 110 96 104 C 64 100 40 112 16 98 C 8 92 8 80 14 72 Z';
+const RIVER='M16 88 C 50 84 80 92 120 86 C 170 79 210 92 252 86 C 296 80 330 88 348 85';
+const ZONES=[
+ {id:'banjul',name:'Banjul',x:38,y:84,r:15,sev:.95},
+ {id:'kanifing',name:'Kanifing',x:58,y:95,r:18,sev:.90},
+ {id:'brikama',name:'Brikama',x:80,y:108,r:20,sev:.78},
+ {id:'kerewan',name:'Kerewan',x:124,y:64,r:18,sev:.50},
+ {id:'mansakonko',name:'Mansa Konko',x:156,y:104,r:17,sev:.40},
+ {id:'janjanbureh',name:'Janjanbureh',x:238,y:84,r:19,sev:.80},
+ {id:'basse',name:'Basse',x:322,y:80,r:18,sev:.62}];
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('gmap');
+function el(t,a){const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);return n;}
+
+const defs=el('defs',{});
+ZONES.forEach(z=>{
+  const g=el('radialGradient',{id:'glow-'+z.id});
+  g.appendChild(el('stop',{offset:'0%','stop-color':'#E08A00','stop-opacity':.5}));
+  g.appendChild(el('stop',{offset:'55%','stop-color':'#E08A00','stop-opacity':.16}));
+  g.appendChild(el('stop',{offset:'100%','stop-color':'#E08A00','stop-opacity':0}));
+  defs.appendChild(g);
+});
+const clip=el('clipPath',{id:'gclip'});clip.appendChild(el('path',{d:COUNTRY}));defs.appendChild(clip);
+svg.appendChild(defs);
+
+svg.appendChild(el('path',{d:COUNTRY,fill:'#16202C',stroke:'#3B4754','stroke-width':1.3}));
+const inland=el('g',{'clip-path':'url(#gclip)'});
+inland.appendChild(el('path',{d:RIVER,fill:'none',stroke:'#0E50A0','stroke-width':3.4,opacity:.55}));
+inland.appendChild(el('path',{d:RIVER,fill:'none',stroke:'#6FA7E8','stroke-width':1.1,opacity:.65}));
+ZONES.forEach(z=>inland.appendChild(el('circle',{cx:z.x,cy:z.y,r:z.r*1.6,fill:'url(#glow-'+z.id+')'})));
+ZONES.forEach(z=>{
+  const n=Math.round(7+z.sev*15);
+  for(let i=0;i<n;i++){
+    const a=i*137.5*Math.PI/180, rr=z.r*1.12*Math.sqrt(i/n);
+    const lit=(i%4)!==3;
+    inland.appendChild(el('circle',{
+      cx:(z.x+Math.cos(a)*rr).toFixed(1), cy:(z.y+Math.sin(a)*rr).toFixed(1),
+      r:(1.4+z.sev*1.3).toFixed(1),
+      fill:lit?'#F2CF86':'#5A6271', opacity:lit?.95:.55}));
+  }
+});
+svg.appendChild(inland);
+ZONES.forEach(z=>{
+  svg.appendChild(el('circle',{cx:z.x,cy:z.y,r:4.4,fill:'#E08A00',stroke:'#0F1722','stroke-width':1.6}));
+});
+[['Banjul',38,84,-2,-14],['Brikama',80,108,0,17],['Basse',322,80,0,-13]].forEach(([t,x,y,dx,dy])=>{
+  const tx=el('text',{x:x+dx,y:y+dy,'text-anchor':'middle','font-size':10.5,'font-weight':700,
+    fill:'#F4F7FA','font-family':"'Archivo',sans-serif",'letter-spacing':'.6'});
+  tx.textContent=t;svg.appendChild(tx);
+});
+</script>
+</body>
+</html>

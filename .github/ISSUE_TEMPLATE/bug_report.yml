@@ -1,0 +1,37 @@
+name: 🐛 Bug report
+description: Something in the app is broken, confusing, or slow.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, and what went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: false
+  - type: input
+    id: device
+    attributes:
+      label: Phone & browser
+      placeholder: e.g. Android 12, Chrome · or iPhone, Safari
+    validations:
+      required: false
+  - type: input
+    id: network
+    attributes:
+      label: Network (if relevant)
+      placeholder: e.g. 3G, data-saver on, offline
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag an image here if you can. Please don't include other people's content.
+  - type: markdown
+    attributes:
+      value: "⚠️ For security or privacy problems, do **not** use this form — see SECURITY.md."

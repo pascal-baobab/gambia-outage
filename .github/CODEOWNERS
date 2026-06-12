@@ -1,0 +1,17 @@
+# Code owners — these paths require maintainer review before merge.
+# The trust/anonymity layer is the heart of the project's privacy promise:
+# changes here get extra-careful review (see CONTRIBUTING.md).
+
+# Backend hooks: rate-limiting, key derivation, trust counting, XP mint/claim
+/pb/pb_hooks/                     @pascal-baobab
+
+# The privacy invariants and the test that guards them
+/web/src/lib/status.ts            @pascal-baobab
+/web/src/lib/account.ts           @pascal-baobab
+/web/src/lib/community-anonymity.test.ts   @pascal-baobab
+
+# Governance, security and licensing
+/GOVERNANCE.md                    @pascal-baobab
+/SECURITY.md                      @pascal-baobab
+/LICENSE                          @pascal-baobab
+/docs/PRIVACY.md                  @pascal-baobab

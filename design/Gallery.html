@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gambia Outage · v2.0 Design Pack — Review Gallery</title>
+<style>
+  :root { --ink:#11161C; --ink70:#3B454F; --ink45:#69737E; --ink25:#9AA4AE; --line:#E4E8EC; --paper:#fff; --wash:#F6F8FA; }
+  html, body { margin: 0; }
+  body {
+    background:
+      radial-gradient(1200px 700px at 15% -5%, #FFE9EC 0%, transparent 55%),
+      radial-gradient(1200px 700px at 85% 0%, #E4ECFA 0%, transparent 55%),
+      linear-gradient(180deg, #F7F9FB 0%, #EDF1F5 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink); min-height: 100vh; padding: 40px 28px 64px; box-sizing: border-box;
+  }
+  .head { max-width: 1320px; margin: 0 auto 30px; }
+  .flagrule { display:flex; height:6px; width:120px; border-radius:2px; overflow:hidden; margin-bottom:16px; }
+  .flagrule i { display:block; height:100%; }
+  h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.6px; margin: 0 0 8px; }
+  h1 .dim { color: var(--ink45); }
+  .sub { font-size: 15px; font-weight: 600; color: var(--ink70); max-width: 760px; line-height: 1.55; margin: 0; }
+  .meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .chip { font-size:12px; font-weight:700; color: var(--ink70); background: var(--paper); border:1px solid var(--line); border-radius:999px; padding:6px 12px; }
+  .grid { max-width: 1320px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 40px 36px; justify-content: center; }
+  .card { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .cardhead { width: 384px; max-width: 92vw; }
+  .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background: var(--ink); color:#fff; font-size:13px; font-weight:800; margin-right:9px; }
+  .title { font-size: 17px; font-weight: 800; }
+  .desc { font-size: 12.5px; font-weight: 600; color: var(--ink45); margin-top: 5px; line-height: 1.45; }
+  .toggle { display:inline-flex; background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:3px; gap:2px; margin-top:11px; box-shadow:0 1px 4px rgba(15,23,34,.05); }
+  .toggle button { border:none; background:transparent; border-radius:999px; padding:6px 14px; font-size:12.5px; font-weight:800; color:var(--ink45); cursor:pointer; font-family:inherit; }
+  .toggle button[data-on="true"] { background: var(--ink); color:#fff; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="flagrule"><i style="flex:6;background:#CE1126"></i><i style="flex:.6;background:#fff"></i><i style="flex:4;background:#0E50A0"></i><i style="flex:.6;background:#fff"></i><i style="flex:6;background:#3A7728"></i></div>
+    <h1>Gambia Outage <span class="dim">· v2.0 Design Pack</span></h1>
+    <p class="sub">Five interactive prototypes for the "Beyond Outages" milestone, built on the light-surface direction and the locked <code>ds.jsx</code> token system. Every screen is live — tap, swap, type, crop. Each phone flips between <b>EN · FR · AR</b> (Arabic is right-to-left).</p>
+    <div class="meta">
+      <span class="chip">Tokens only · ds.jsx whitelist</span>
+      <span class="chip">Dark shell protected</span>
+      <span class="chip">390×844 · touch ≥ 44px</span>
+      <span class="chip">Calculator keypad LTR-always</span>
+      <span class="chip">SVG art: zero &lt;text&gt;</span>
+    </div>
+  </div>
+  <div id="root" class="grid"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="ds.jsx"></script>
+  <script type="text/babel" src="calculator.jsx"></script>
+  <script type="text/babel" src="notification-center.jsx"></script>
+  <script type="text/babel" src="photo-crush.jsx"></script>
+  <script type="text/babel" src="avatar-picker.jsx"></script>
+  <script type="text/babel" src="tools-hub.jsx"></script>
+  <script type="text/babel">
+    const { PhoneShell } = window;
+    function LangToggle({ lang, set }) {
+      return (
+        <div className="toggle">
+          {['EN','FR','AR'].map(function(l){ return <button key={l} data-on={String(lang===l)} onClick={function(){set(l);}}>{l}</button>; })}
+        </div>
+      );
+    }
+    function Card({ n, title, desc, children }) {
+      return (
+        <div className="card">
+          <div className="cardhead">
+            <div><span className="num">{n}</span><span className="title">{title}</span></div>
+            <div className="desc">{desc}</div>
+          </div>
+          {children}
+        </div>
+      );
+    }
+    function Frame({ n, title, desc, render }) {
+      const [lang, setLang] = React.useState('EN');
+      return (
+        <Card n={n} title={title} desc={desc}>
+          <LangToggle lang={lang} set={setLang} />
+          <PhoneShell>{render(lang)}</PhoneShell>
+        </Card>
+      );
+    }
+    function ToolsFrame() {
+      const [lang, setLang] = React.useState('EN');
+      const [open, setOpen] = React.useState(null);
+      const back = function(){ setOpen(null); };
+      let view;
+      if (open === 'calculator') view = <window.CalculatorApp lang={lang} onBack={back} />;
+      else if (open === 'photoCrush') view = <window.PhotoCrushApp lang={lang} onBack={back} />;
+      else view = <window.ToolsHubApp lang={lang} onOpen={setOpen} />;
+      return (
+        <Card n="5" title="Tools Hub" desc="HomeScreen card section · tap a tool to open the live feature in-phone · scales to more tools">
+          <LangToggle lang={lang} set={setLang} />
+          <PhoneShell>{view}</PhoneShell>
+        </Card>
+      );
+    }
+    function Gallery() {
+      return (
+        <React.Fragment>
+          <Frame n="1" title="Notification Center" desc="Bell + badge states · bottom-sheet tray · 4 types · today_pulse sparkline · tap ✕ to clear to empty state"
+            render={function(l){ return <window.NotificationCenterApp lang={l} />; }} />
+          <Frame n="2" title="Calculator" desc="Light-direction pilot · immediate-execution · memory row · tall = · AR uses Arabic-Indic display digits, keypad stays LTR"
+            render={function(l){ return <window.CalculatorApp lang={l} />; }} />
+          <Frame n="3" title="Photo Crush" desc="Untimed match-3 · 5 Gambia tiles · mini radio · photo crop overlay · illustrated game-over"
+            render={function(l){ return <window.PhotoCrushApp lang={l} />; }} />
+          <Frame n="4" title="Avatar Picker" desc="4-col Classic grid · blue selection ring + check · all free · light surface for tone legibility"
+            render={function(l){ return <window.AvatarPickerApp lang={l} />; }} />
+          <ToolsFrame />
+        </React.Fragment>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<Gallery />);
+  </script>
+</body>
+</html>

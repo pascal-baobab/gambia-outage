@@ -1,0 +1,28 @@
+name: 💡 Feature idea
+description: Suggest a new feature or improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Who is it for, and what can't they do today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Fits the project's constraints?
+      options:
+        - label: Works on a cheap phone / slow network (mobile-first, lite-first)
+        - label: Does not require collecting personal data or linking to reports
+        - label: Could work in English, French and Arabic
+  - type: markdown
+    attributes:
+      value: "Larger or privacy-sensitive features go through a public RFC first — see ROADMAP.md and GOVERNANCE.md."

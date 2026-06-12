@@ -1,0 +1,19 @@
+{
+  "name": "gambia-outage-data",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Geo seed + ingest for Gambia Outage.",
+  "scripts": {
+    "seed": "tsx seed.ts",
+    "seed:honor": "tsx seed-honor.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pocketbase": "^0.26.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

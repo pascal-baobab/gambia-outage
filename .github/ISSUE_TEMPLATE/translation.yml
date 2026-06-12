@@ -1,0 +1,30 @@
+name: 🌍 Translation
+description: Help translate the app — Wolof, Mandinka, or fixes to EN/FR/AR.
+labels: [translation, help wanted]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you! Translations are the most valuable non-code contribution to this
+        project. You don't need to program — it's a list of phrases. We'll help with
+        the rest. The app currently ships in English, French and Arabic; **Wolof and
+        Mandinka are especially wanted.**
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options: [Wolof, Mandinka, English (fix), French (fix), Arabic (fix), Other]
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What would you like to translate or correct?
+      description: A whole language, a screen, or a specific wrong phrase — anything helps.
+    validations:
+      required: true
+  - type: input
+    id: help
+    attributes:
+      label: Do you want help getting set up?
+      placeholder: e.g. "Yes, I've never used GitHub" — totally fine, we'll guide you.

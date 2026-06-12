@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "comment": "Editor-only: type support for build config. Not part of the app build (Vite/jiti transpile these at runtime).",
+  "include": ["vite.config.ts", "tailwind.config.ts", "postcss.config.js", "src/lib/tokens.ts"]
+}

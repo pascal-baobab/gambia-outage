@@ -56,6 +56,8 @@ So this one is built to need **zero trust**:
 |---|---|---|---|
 | ![Onboarding](docs/screenshots/onboarding.png) | ![Home](docs/screenshots/home.png) | ![Identity](docs/screenshots/identity.png) | ![Community](docs/screenshots/community.png) |
 
+**→ [Full screenshot gallery](docs/SCREENSHOTS.md)** — the map, all 7 regions and 55 quarters, news, community, Wall of Honor, languages and radio.
+
 ## Install it (for everyone)
 
 Gambia Outage is a **PWA** — it installs from the browser, no app store needed:

@@ -15,6 +15,8 @@ export const qk = {
   communityLinks: ['community-links'] as const,
   // People directory (per-account: the list + the viewer's wave status are viewer-specific).
   people: (account: string) => ['people', account] as const,
+  // Zone leaderboard — keyed by zone ('' = All zones) + current week id.
+  leaderboard: (zone: string, week: string) => ['leaderboard', zone, week] as const,
   contactRequests: (account: string) => ['contact-requests', account] as const,
   ambassadors: ['ambassadors'] as const,
 }

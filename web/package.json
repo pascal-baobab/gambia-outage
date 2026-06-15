@@ -1,7 +1,7 @@
 {
   "name": "gambia-outage-web",
   "private": true,
-  "version": "0.120.0",
+  "version": "0.121.0",
   "type": "module",
   "description": "Gambia Outage — Report the Dark. PWA frontend (React + Vite + TS + Tailwind).",
   "scripts": {

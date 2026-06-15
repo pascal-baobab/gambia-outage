@@ -58,6 +58,7 @@
   <script type="text/babel" src="photo-crush.jsx"></script>
   <script type="text/babel" src="avatar-picker.jsx"></script>
   <script type="text/babel" src="tools-hub.jsx"></script>
+  <script type="text/babel" src="leaderboard.jsx"></script>
   <script type="text/babel">
     const { PhoneShell } = window;
     function LangToggle({ lang, set }) {
@@ -114,6 +115,8 @@
           <Frame n="4" title="Avatar Picker" desc="4-col Classic grid · blue selection ring + check · all free · light surface for tone legibility"
             render={function(l){ return <window.AvatarPickerApp lang={l} />; }} />
           <ToolsFrame />
+          <Frame n="6" title="Zone Leaderboard (SKETCH)" desc="Phase 6 throwaway sketch · pseudonym + zone rows · weekly reset · zone filter chips · NameGate-gated submit (toggle no-pseudonym state at bottom) · NOT the final design bundle"
+            render={function(l){ return <window.LeaderboardScreen lang={l} onBack={function(){}} />; }} />
         </React.Fragment>
       );
     }

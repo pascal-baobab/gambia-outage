@@ -20,6 +20,7 @@ import { SocialLinksSection } from '@/components/community/SocialLinksSection'
 import { ContributorsBadge } from '@/components/profile/ContributorsBadge'
 import { RankChip } from '@/components/profile/RankChip'
 import { WallOfHonorTeaser } from '@/components/community/WallOfHonorTeaser'
+import { ToolsHubSection } from '@/components/tools/ToolsHubSection'
 import { useMyArea } from '@/hooks/useMyArea'
 import { useMacro } from '@/hooks/useData'
 import { sevToStatus } from '@/lib/status'
@@ -226,6 +227,7 @@ export function HomeScreen({
   onCommunity,
   onNews,
   onReport,
+  onOpenTool,
 }: {
   snapshot?: Snapshot
   loading: boolean
@@ -240,6 +242,7 @@ export function HomeScreen({
   onCommunity: () => void
   onNews: () => void
   onReport: (action: 'out' | 'back') => void
+  onOpenTool: (id: string) => void
 }) {
   const th = useTheme()
   const t = useT()
@@ -347,6 +350,7 @@ export function HomeScreen({
         <WallOfHonorTeaser />
         <CommunityStrip onCommunity={onCommunity} />
         <ContributorsBadge variant="home" />
+        <ToolsHubSection onOpen={onOpenTool} />
 
         {/* "From Facebook" — owner-curated posts. On Home we show a short teaser (the full feed lives
             in the News tab) so the single scroll container stays manageable. Self-fetches; renders

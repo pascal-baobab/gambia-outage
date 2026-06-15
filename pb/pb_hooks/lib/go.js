@@ -1575,6 +1575,95 @@ function buildComments(app, targetType, targetId, limit) {
 }
 function buildZoneComments(app, zoneId, limit) { return buildComments(app, 'zone', zoneId, limit) }
 
+// ── Phase 6: per-zone Photo-Crush leaderboard (pseudonym row + ip_key-only ledger) ────────────────
+// Best-score-per-(account, zone, week). The score is CLIENT-AUTHORITATIVE — the game runs entirely in
+// the browser and the server only ever sees the final number — so cheat PREVENTION is impossible here.
+// The realistic anti-cheat posture (owner-locked D-02) is RESPONSE, not prevention: a generous server
+// plausibility cap (LB_SCORE_CAP), a per-IP hourly rate limit (lbRlCheck/lb_rl, network-layer, copied
+// verbatim from the sub_rl push-hardening ledger), best-per-week dedupe (caps the lifetime value of any
+// single cheated score to 7 days), and moderator hard-delete (MOD_DELETE_COLLECTIONS.leaderboard) as the
+// human backstop. HMAC/signed-score + server-side replay are DEFERRED to v2.x (residual risk accepted).
+// P0 (invariant #1/#4): the score row carries ONLY pseudonym + content fields — NEVER report_id /
+// event_id / rl_key / ip_key. The ipk is a local var consumed ONLY by lbRlCheck then discarded; the
+// lb_rl ledger holds ip_key + created ONLY (no account, no zone, no score). The submitScore→
+// buildLeaderboard slice is source-scanned by community-anonymity.test.ts as the build gate.
+
+// Per-IP leaderboard-submit rate limit — verbatim copy of subRlCheck (sub_rl → lb_rl,
+// SUB_IP_HOURLY → LB_IP_HOURLY). Holds ONLY ip_key + created; self-pruning + day-old sweep; fail-open
+// on missing ipk and on any ledger error so the endpoint never goes down on plumbing trouble.
+function lbRlCheck(app, ipk) {
+  if (!ipk) return true // no resolvable IP (tests, internal) — never block on guard plumbing
+  const cap = parseInt(env('LB_IP_HOURLY', '10'), 10)
+  const hourAgo = pbTime(new Date(Date.now() - 3600000))
+  try {
+    // self-cleaning: drop this key's rows older than the window + a bounded sweep of day-old rows
+    // (ip_key rotates daily, so stale keys would otherwise accumulate forever).
+    app.findRecordsByFilter('lb_rl', 'ip_key = {:k} && created < {:t}', '', 200, 0, { k: ipk, t: hourAgo })
+      .forEach((r) => { try { app.delete(r) } catch (_) {} })
+    app.findRecordsByFilter('lb_rl', 'created < {:t}', '', 200, 0, { t: pbTime(new Date(Date.now() - 86400000)) })
+      .forEach((r) => { try { app.delete(r) } catch (_) {} })
+    const recent = app.findRecordsByFilter('lb_rl', 'ip_key = {:k} && created >= {:t}', '', cap + 1, 0, { k: ipk, t: hourAgo })
+    if (recent.length >= cap) return false
+    const row = new Record(app.findCollectionByNameOrId('lb_rl'))
+    row.set('ip_key', ipk)
+    app.save(row)
+    return true
+  } catch (_) {
+    return true // ledger trouble must never take the submit endpoint down
+  }
+}
+// Read shape — pseudonym + content ONLY (no zone/week/identifier). Mirrors postShape's discipline.
+function leaderboardRowShape(app, r) {
+  return {
+    id: r.id, nickname: r.get('nickname') || '', avatarId: r.get('avatar_id') || '',
+    score: r.get('score'), ago: relAgo(r.getString('created')),
+  }
+}
+function submitScore(app, body, realIP) {
+  const account = String(body.account_id || '')
+  if (!ACCT_RE.test(account)) throw new BadRequestError('bad request')
+  const zone = String(body.zone || '')
+  if (!zoneNameSafe(app, zone)) throw new BadRequestError('unknown zone')
+  const score = Math.floor(Number(body.score))
+  // Generous-by-design plausibility ceiling (D-02 / A1): the laziest cheat (POST score=999999999) is
+  // rejected, but legit play must never be. TODO(post-launch): calibrate LB_SCORE_CAP against the real
+  // score distribution and tighten — this is the one value that needs observed-data tuning. Residual
+  // risk (client-authoritative score) is accepted: cap + rate-limit + weekly-reset + mod-delete are the
+  // RESPONSE, not prevention; HMAC/replay deferred to v2.x.
+  const cap = parseInt(env('LB_SCORE_CAP', '50000'), 10)
+  if (!isFinite(score) || score <= 0 || score > cap) throw new BadRequestError('implausible score')
+  const ipk = ipKey(app, realIP) // local-only — consumed by lbRlCheck, NEVER set on the row
+  if (!lbRlCheck(app, ipk)) throw new BadRequestError('hourly limit reached — try again later')
+  const week = isoWeekId(new Date()) // server-authoritative week stamp (client never sends it)
+  let rec
+  try {
+    rec = app.findFirstRecordByFilter('leaderboard_scores',
+      'account_id = {:a} && zone = {:z} && week = {:w}', { a: account, z: zone, w: week })
+    if (score <= rec.get('score')) return leaderboardRowShape(app, rec) // keep best — no downgrade
+  } catch (_) {
+    rec = new Record(app.findCollectionByNameOrId('leaderboard_scores'))
+    rec.set('account_id', account); rec.set('zone', zone); rec.set('week', week); rec.set('hidden', false)
+  }
+  rec.set('nickname', cleanNick(body.nickname))
+  rec.set('avatar_id', cleanAvatar(body.avatar_id))
+  rec.set('score', score)
+  app.save(rec) // ← only the 8 allowed fields; NO report/network identifier ever set here (P0)
+  return leaderboardRowShape(app, rec)
+}
+function buildLeaderboard(app, zoneId, weekId, limit) {
+  const n = Math.max(1, Math.min(100, parseInt(limit, 10) || 50))
+  const week = /^\d{4}-W\d{2}$/.test(String(weekId)) ? String(weekId) : isoWeekId(new Date())
+  const z = String(zoneId || '')
+  const allZones = !z || z === 'all'
+  const filter = allZones ? 'week = {:w} && hidden = false' : 'zone = {:z} && week = {:w} && hidden = false'
+  const params = allZones ? { w: week } : { z: z, w: week }
+  const rows = app.findRecordsByFilter('leaderboard_scores', filter, '-score', n, 0, params)
+  return {
+    week, zone: z, zoneName: allZones ? null : zoneNameSafe(app, z),
+    rows: rows.map((r, i) => Object.assign({ rank: i + 1 }, leaderboardRowShape(app, r))),
+  }
+}
+
 // ── Q&A board ("Talk" tab): pseudonymous questions, answers are comments(target_type='question') ──
 function questionShape(r) {
   const img = r.get('image')
@@ -1649,7 +1738,7 @@ function deleteQuestion(app, body) {
 // entirely inside the pseudonym layer — it carries no device dedupe key and never touches the anonymous
 // outage stream.
 const MOD_DELETE_HOURLY = 1000 // bound the blast radius if a moderator capability ever leaks
-const MOD_DELETE_COLLECTIONS = { comment: 'comments', question: 'questions', post: 'posts', community_link: 'community_links', social_link: 'social_links' }
+const MOD_DELETE_COLLECTIONS = { comment: 'comments', question: 'questions', post: 'posts', community_link: 'community_links', social_link: 'social_links', leaderboard: 'leaderboard_scores' }
 
 function isModeratorAccount(app, account) {
   if (!ACCT_RE.test(String(account))) return false
@@ -2291,6 +2380,8 @@ module.exports = {
   opsHeartbeat, opsHealth, bodyTooLarge,
   buildHourly,
   createPost, createComment, saveIntro, socialProfile, buildFeed, buildZoneComments, buildComments,
+  // Phase 6 — per-zone Photo-Crush leaderboard (lbRlCheck/leaderboardRowShape stay internal)
+  submitScore, buildLeaderboard,
   createQuestion, buildQuestions, buildQuestionThread, questionShape, updateQuestion, deleteQuestion,
   modDelete, isModeratorAccount,
   buildSocial, likeSocial,

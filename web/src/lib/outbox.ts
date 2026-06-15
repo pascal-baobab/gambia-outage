@@ -94,10 +94,16 @@ let flushing = false
  * Try to send every queued report. Removes items that succeed OR that the backend has already
  * applied (duplicate client_uuid → benign). Leaves genuinely-unreachable items for the next
  * flush. `send` is injected to avoid a circular import with api.ts.
+ *
+ * `onItemDelivered` is an optional callback fired once per successfully delivered item (after
+ * remove(), before sent++). The callback receives the full OutboxItem so callers can surface
+ * a per-item notification using the human `place` label — see useOutboxFlush.ts for usage.
+ * This callback approach keeps outbox.ts free of any app/ layer imports (Pitfall 1).
  */
 export async function flushOutbox(
   send: (input: ReportInput) => Promise<void>,
   isDuplicate: (err: unknown) => boolean,
+  onItemDelivered?: (item: OutboxItem) => void,
 ): Promise<{ sent: number; remaining: number }> {
   if (flushing) return { sent: 0, remaining: await outboxCount() }
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -111,11 +117,13 @@ export async function flushOutbox(
       try {
         await send(item.input)
         await remove(item.client_uuid)
+        onItemDelivered?.(item)
         sent++
       } catch (err) {
         if (isDuplicate(err)) {
           // already applied server-side (a prior partial send) → drop it, it's done
           await remove(item.client_uuid)
+          onItemDelivered?.(item)
           sent++
         } else {
           // network still down (or transient) → stop; retry on next online/flush

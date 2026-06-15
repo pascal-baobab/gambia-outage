@@ -1,7 +1,7 @@
 // useData.ts — TanStack Query hooks over the read-model API. Reads refetch on a
 // 30s interval so Home/List/Zone stay fresh without SSE (SSE lands in Phase 2).
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getSnapshot, getMacro, getNational, getCommunity, getCommunityWeek, fetchSocial, fetchFeed, fetchStats, fetchCommunityLinks, fetchPeople, fetchContactRequests, fetchAmbassadors } from '@/lib/api'
+import { getSnapshot, getMacro, getNational, getCommunity, getCommunityWeek, fetchSocial, fetchFeed, fetchStats, fetchCommunityLinks, fetchPeople, fetchContactRequests, fetchAmbassadors, fetchLeaderboard } from '@/lib/api'
 import { qk } from '@/lib/queryKeys'
 import { quickReport, type QuickZone, type QuickResult } from '@/lib/quickReport'
 
@@ -125,6 +125,17 @@ export function useContactRequests(accountId: string | null) {
     queryKey: qk.contactRequests(accountId as string),
     queryFn: () => fetchContactRequests(accountId as string),
     enabled: !!accountId,
+    refetchInterval: REFETCH_MS,
+  })
+}
+
+/** Zone leaderboard — the live current-week ranked board, keyed by zone ('' = All zones) + week id.
+ *  The current week's board changes as scores land, so it refetches on the standard 30s interval
+ *  (NOT the 1h staleTime used for frozen historical weeks). */
+export function useLeaderboard(zone: string, week: string) {
+  return useQuery({
+    queryKey: qk.leaderboard(zone, week),
+    queryFn: () => fetchLeaderboard(zone, week),
     refetchInterval: REFETCH_MS,
   })
 }

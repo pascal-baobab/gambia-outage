@@ -77,7 +77,7 @@ export function adminLogout(): void {
   emit()
 }
 
-export type ModType = 'comment' | 'question' | 'post' | 'community_link' | 'social_link'
+export type ModType = 'comment' | 'question' | 'post' | 'community_link' | 'social_link' | 'leaderboard'
 
 /** Soft-hide (or restore) a piece of user content. Superuser-gated server-side. */
 export async function adminHide(type: ModType, id: string, hidden = true): Promise<void> {

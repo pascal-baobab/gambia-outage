@@ -25,10 +25,21 @@
   function fmt(n) {
     if (!isFinite(n)) return 'Error';
     if (n === 0) return '0';
-    let s = (Math.round(n * 1e10) / 1e10).toString();
+    // Kill float dust ONLY when scaling by 1e10 stays inside the safe-integer
+    // range — otherwise the multiply itself injects dust into a clean value
+    // (e.g. 123456789012 * 1e10 overflows 2^53 and corrupts the result, which
+    // then trips the length cap into bogus scientific notation). Integers and
+    // large magnitudes are stringified directly.
+    let s =
+      Number.isInteger(n) || Math.abs(n) >= 1e5
+        ? n.toString()
+        : (Math.round(n * 1e10) / 1e10).toString();
     if (s.replace('-', '').replace('.', '').length > 12) {
-      s = n.toPrecision(10).replace(/\.?0+$/, '');
-      if (Math.abs(n) >= 1e12 || (Math.abs(n) < 1e-6 && n !== 0)) s = n.toExponential(6);
+      if (Math.abs(n) >= 1e12 || (Math.abs(n) < 1e-6 && n !== 0)) {
+        s = n.toExponential(6);
+      } else {
+        s = n.toPrecision(10).replace(/\.?0+$/, '');
+      }
     }
     return s;
   }
@@ -36,6 +47,17 @@
     switch (op) { case '+': return a + b; case '-': return a - b; case '*': return a * b; case '/': return b === 0 ? NaN : a / b; default: return b; }
   }
   const OP_SYM = { '+': '+', '-': '−', '*': '×', '/': '÷' };
+
+  // Key component at module scope — declaring it inside CalculatorApp's render
+  // created a fresh component identity each render, remounting all ~20 keypad
+  // buttons on every keystroke (lost press-scale + keyboard focus, WR-02).
+  const Key = ({ style, onClick, label, span, ariaLabel }) => (
+    <button type="button" aria-label={ariaLabel || label} onClick={onClick}
+      onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.95)')}
+      onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+      onPointerLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+      style={{ ...style, ...(span || {}) }}>{label}</button>
+  );
 
   function CalculatorApp({ lang = 'EN', onBack }) {
     const t = STR[lang] || STR.EN;
@@ -100,14 +122,6 @@
     const opKey = (active) => ({ ...keyBase, background: active ? TH.on : GPT_T.keyOp, color: active ? '#fff' : GPT_T.onDeep, fontSize: 26 });
     const memKey = { ...keyBase, background: GPT_T.wash, color: GPT_T.ink70, fontSize: 15, letterSpacing: 0.2, borderRadius: 13 };
     const eqKey = { ...keyBase, background: GPT_T.ink, color: '#fff', fontSize: 30 };
-
-    const Key = ({ style, onClick, label, span, ariaLabel }) => (
-      <button type="button" aria-label={ariaLabel || label} onClick={onClick}
-        onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.95)')}
-        onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-        onPointerLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-        style={{ ...style, ...(span || {}) }}>{label}</button>
-    );
 
     const opActive = (op) => st.pending === op && st.waiting;
 

@@ -19,6 +19,10 @@ export const GPT_T = {
   panelInk: '#F4F7FA',
   panelInk60: '#9DAAB8',
   paper2: '#F4F1EA', // warm editorial surface
+  // ── Light-direction pilot tokens (Phase 4 — Calculator + future light surfaces) ──
+  keyDigit: '#EAEEF2',   // calculator digit key bg — LOCKED 2026-06-10 design/ds.jsx
+  keyOp: '#FFE5B4',      // calculator operator key bg (un-pressed) — LOCKED 2026-06-10
+  tileAnchor: '#F0F4F8', // Photo-Crush tile base (Phase 5 reuse) — LOCKED 2026-06-10
 } as const
 
 // ── Status themes — swappable (standard / sunlight high-contrast) ───────────
@@ -100,6 +104,9 @@ export const ACCENT = {
   whatsapp: '#25D366',
   // Ambassador amber (badge card on Profile/Ambassador screens)
   amber: '#d97706', amberDeep: '#b45309', amberBg: '#fef3c7',
+  // Photo-Crush game tile accents (D-05, LOCKED 2026-06-10 from design/ds.jsx)
+  tile4: '#A855F7', // kora/loom — purple
+  tile5: '#0EA5E9', // flame/calabash — sky blue (River Gambia)
 } as const
 
 // ── Shared button styles (M3 batch A) — the three recurring CTA shapes, previously re-invented

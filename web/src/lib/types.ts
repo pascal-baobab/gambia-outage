@@ -58,6 +58,23 @@ export interface Post {
   created: string
   ago: string
 }
+// Zone leaderboard — pseudonym + content ONLY. NO zone/week/identifier leakage on a row
+// (invariant #4: leaderboard rows are never linked back to reports/events). avatarId is
+// camelCase to match the server's leaderboardRowShape.
+export interface LeaderboardRow {
+  id: string
+  rank?: number
+  nickname: string
+  avatarId: string
+  score: number
+  ago: string
+}
+export interface LeaderboardResp {
+  week: string
+  zone: string
+  zoneName: string | null
+  rows: LeaderboardRow[]
+}
 export interface ZoneComment {
   id: string
   nickname: string

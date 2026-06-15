@@ -47,7 +47,11 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
+      includeAssets: [
+        'favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
+        'tiles/tile-1.svg', 'tiles/tile-2.svg', 'tiles/tile-3.svg',
+        'tiles/tile-4.svg', 'tiles/tile-5.svg',
+      ],
       manifest: {
         name: 'Gambia Outage — Report the Dark',
         short_name: 'Gambia Outage',

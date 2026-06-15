@@ -1,6 +1,6 @@
 // api.ts — typed client for the custom read-model routes (§3). Reads are public, no auth.
 // In dev, Vite proxies /api → http://127.0.0.1:8090 (see vite.config.ts).
-import type { Snapshot, Macro, National, QuarterDir, Community, CommunityWeek, Post, ZoneComment, SocialProfile, SocialLink, CommunityLink, Question, Person, ContactRequest, Privacy } from './types'
+import type { Snapshot, Macro, National, QuarterDir, Community, CommunityWeek, Post, ZoneComment, SocialProfile, SocialLink, CommunityLink, Question, Person, ContactRequest, Privacy, LeaderboardRow, LeaderboardResp } from './types'
 import type { Profile } from '@/lib/xp'
 import { getTurnstileToken } from './turnstile'
 
@@ -201,6 +201,15 @@ async function postJSON<T>(path: string, body: unknown): Promise<T> {
 export const createPost = (input: { account_id: string; nickname: string; avatar_id: string; body: string; zone?: string | null }) =>
   postJSON<Post>('/posts', input)
 export const fetchFeed = (limit = 50) => getJSON<{ posts: Post[] }>(`/feed?limit=${limit}`).then((d) => d.posts)
+
+// ── Zone leaderboard (pseudonym + score only — never linked to reports) ────────
+/** Read the ranked board for a zone ('' = All zones) and week (''=current). */
+export const fetchLeaderboard = (zone: string, week = '', limit = 50) =>
+  getJSON<LeaderboardResp>(`/leaderboard?zone=${encodeURIComponent(zone)}&week=${encodeURIComponent(week)}&limit=${limit}`)
+/** Submit a Photo-Crush score. Body is pseudonym + score ONLY — the server stamps the
+ *  week authoritatively (never send the week from the client; Pitfall 4 / T-06-04). */
+export const submitScore = (input: { account_id: string; nickname: string; avatar_id: string; zone: string; score: number }) =>
+  postJSON<LeaderboardRow | LeaderboardResp>('/leaderboard/submit', input)
 /** Create a comment against any target: a zone, a social card, a community link, or a question. */
 export const createComment = (input: { account_id: string; nickname: string; avatar_id: string; body: string; target_type?: 'zone' | 'social' | 'community_link' | 'question'; target_id?: string; zone?: string }) =>
   postJSON<ZoneComment>('/comments', input)

@@ -4,8 +4,8 @@
 /** App version — shown in About (settings) and discreetly on the splash so users can confirm which
  *  build is loaded. Bump on every meaningful release. The splash also force-applies a newer deployed
  *  build under its animation (see lib/appRefresh.ts), so this number reflects what's actually running. */
-export const APP_VERSION = '0.120'
-export const APP_VERSION_DATE = '12 Jun 2026 · 20:41'
+export const APP_VERSION = '0.121'
+export const APP_VERSION_DATE = '15 Jun 2026 · 17:07'
 
 /** Public open-source repository (AGPL-3.0). Shown in About + the Project page. */
 export const GITHUB_URL = 'https://github.com/pascal-baobab/gambia-outage'

@@ -1,21 +1,18 @@
 // AppHeader.tsx — the global brand bar, present on every PRIMARY tab (Home · Map · News · Community ·
-// Talk · You). Logo left; account chip (with sparkle) + LangBadge + ⓘ (contains WhatsApp + About).
+// Talk · You). Logo left; account chip (with sparkle) + LangBadge + BellButton (notification bell).
 // Rendered ONCE in the Shell (App.tsx); notch/Dynamic-Island safe via --go-safe-top.
 import { useEffect, useState, useRef } from 'react'
 import { GPT_T, GPT_FONT, ACCENT } from '@/lib/tokens'
 import { LogoMark } from '@/components/Logo'
 import { Avatar } from '@/components/profile/Avatar'
-import { GPTIcon } from '@/components/icons'
 import { useProfile } from '@/hooks/useProfile'
 import { getAccountId } from '@/lib/account'
 import { getIdentity, onIdentityChange } from '@/lib/identity'
 import { rankFor } from '@/lib/xp'
 import { useT } from '@/i18n/useT'
-import { checkForUpdate } from '@/lib/appRefresh'
-import { APP_VERSION } from '@/lib/constants'
 import { useLang } from '@/app/langStore'
 import { LANGS, type Lang } from '@/i18n'
-import { openWhatsAppText } from '@/lib/whatsappShare'
+import { BellButton } from '@/components/BellButton'
 
 const LANG_SHORT: Record<Lang, string> = { en: 'EN', fr: 'FR', ar: 'عر' }
 const LANG_FLAG: Record<Lang, string> = { en: '🇬🇧', fr: '🇫🇷', ar: '🇸🇦' }
@@ -108,88 +105,6 @@ function LangBadge() {
   )
 }
 
-/** ⓘ button — tapping opens a panel with WhatsApp share + About. */
-function InfoPanel({ onAbout }: { onAbout: () => void }) {
-  const [open, setOpen] = useState(false)
-  const t = useT()
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-label={t.header.aboutAria}
-        aria-expanded={open}
-        style={{
-          width: 32, height: 32, borderRadius: 12, border: 'none',
-          background: 'transparent', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', cursor: 'pointer', padding: 0,
-        }}
-      >
-        <GPTIcon name="info" size={24} color={GPT_T.ink45} />
-      </button>
-      {open && (
-        <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 998 }} onClick={() => setOpen(false)} />
-          <div style={{
-            position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 999,
-            background: GPT_T.paper, border: `1px solid ${GPT_T.line}`,
-            borderRadius: 13, boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
-            overflow: 'hidden', minWidth: 190,
-          }}>
-            {/* WhatsApp share */}
-            <button
-              onClick={(e) => { e.stopPropagation(); openWhatsAppText(); setOpen(false) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 11, width: '100%',
-                padding: '12px 14px', border: 'none', cursor: 'pointer', textAlign: 'start',
-                fontFamily: GPT_FONT, fontSize: 13.5, fontWeight: 700, color: ACCENT.whatsapp,
-                background: GPT_T.paper, borderBottom: `1px solid ${GPT_T.line}`, whiteSpace: 'nowrap',
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill={ACCENT.whatsapp} aria-hidden>
-                <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.2 4.79 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 1.67c2.2 0 4.26.86 5.82 2.42a8.18 8.18 0 0 1 2.42 5.82c0 4.54-3.7 8.24-8.25 8.24-1.52 0-3.01-.41-4.3-1.19l-.31-.18-3.12.82.83-3.04-.2-.32a8.18 8.18 0 0 1-1.26-4.36c0-4.54 3.7-8.24 8.24-8.24zm4.52 9.83c-.25-.12-1.47-.72-1.69-.8-.23-.09-.39-.13-.56.12-.17.25-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.48-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.84-.2-.48-.41-.42-.56-.42-.14-.01-.31-.01-.48-.01-.17 0-.43.06-.66.31s-.87.85-.87 2.07c0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.2-.58.2-1.07.14-1.18-.06-.1-.22-.16-.47-.28z" />
-              </svg>
-              {t.whatsapp.buttonText}
-            </button>
-            {/* Update & reload (owner 2026-06-10): manual escape hatch when someone suspects they're
-                on a stale build — nudges any waiting SW to take over, then reloads. Shows the running
-                version so "did it change?" is answerable at a glance. */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                checkForUpdate()
-                window.setTimeout(() => window.location.reload(), 350)
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 11, width: '100%',
-                padding: '12px 14px', border: 'none', cursor: 'pointer', textAlign: 'start',
-                fontFamily: GPT_FONT, fontSize: 13.5, fontWeight: 700, color: GPT_T.ink70,
-                background: GPT_T.paper, borderBottom: `1px solid ${GPT_T.line}`, whiteSpace: 'nowrap',
-              }}
-            >
-              <GPTIcon name="refresh" size={18} color={GPT_T.ink45} />
-              {t.header.refresh}
-              <span style={{ marginInlineStart: 'auto', fontSize: 11, fontWeight: 700, color: GPT_T.ink25 }}>v{APP_VERSION}</span>
-            </button>
-            {/* About */}
-            <button
-              onClick={(e) => { e.stopPropagation(); onAbout(); setOpen(false) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 11, width: '100%',
-                padding: '12px 14px', border: 'none', cursor: 'pointer', textAlign: 'start',
-                fontFamily: GPT_FONT, fontSize: 13.5, fontWeight: 700, color: GPT_T.ink70,
-                background: GPT_T.paper, whiteSpace: 'nowrap',
-              }}
-            >
-              <GPTIcon name="info" size={18} color={GPT_T.ink45} />
-              {t.header.about}
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
 // 4-point star SVG glyph used for sparkles
 function StarGlyph({ size, color, style }: { size: number; color: string; style?: React.CSSProperties }) {
   return (
@@ -255,7 +170,15 @@ function ProfileChip({ onProfile }: { onProfile: () => void }) {
   )
 }
 
-export function AppHeader({ onProfile, onAbout }: { onProfile: () => void; onAbout: () => void }) {
+export function AppHeader({
+  onProfile,
+  onBell,
+  unseenCount,
+}: {
+  onProfile: () => void
+  onBell: () => void
+  unseenCount: number
+}) {
   return (
     <div
       style={{
@@ -291,7 +214,7 @@ export function AppHeader({ onProfile, onAbout }: { onProfile: () => void; onAbo
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <LangBadge />
-          <InfoPanel onAbout={onAbout} />
+          <BellButton unseenCount={unseenCount} onOpen={onBell} />
         </div>
       </div>
     </div>

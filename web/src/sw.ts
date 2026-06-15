@@ -50,14 +50,28 @@ self.addEventListener('push', (event: PushEvent) => {
     data = { title: 'Gambia Outage', body: event.data ? event.data.text() : '' }
   }
   const title = data.title || 'Gambia Outage'
+  const body = data.body || ''
+  // Wrap both showNotification AND the in-app broadcast in allSettled so a broadcast
+  // failure never blocks the system notification (Pitfall 3). Payload is { title, body }
+  // only — no report_id/event_id/url (D-15 privacy invariant). When no app window is
+  // open the clients array is empty and the postMessage is a no-op (D-07 — acceptable).
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: data.body || '',
-      tag: data.tag,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      data: { url: data.url || '/' },
-    }),
+    Promise.allSettled([
+      self.registration.showNotification(title, {
+        body,
+        tag: data.tag,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        data: { url: data.url || '/' },
+      }),
+      self.clients
+        .matchAll({ includeUncontrolled: true, type: 'window' })
+        .then((cs) =>
+          cs.forEach((c) =>
+            c.postMessage({ type: 'go_push_notif', payload: { title, body } }),
+          ),
+        ),
+    ]),
   )
 })
 

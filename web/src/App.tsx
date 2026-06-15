@@ -3,6 +3,8 @@
 // map, no SSE, no Web Push (those are Phase 2/3). The prototype's device PhoneShell is
 // not ported — the app fills the real viewport.
 import { Suspense, useEffect, useState } from 'react'
+import { NotificationTray } from '@/components/NotifTray.lazy'
+import { useNotifStore, shouldFirePulse } from '@/app/notifStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { Providers } from '@/app/providers'
@@ -23,6 +25,8 @@ import { getAccountId } from '@/lib/account'
 import { fetchProfile } from '@/lib/api'
 import { setProfile } from '@/lib/profileStore'
 import { RANKS, rankFor, type Profile } from '@/lib/xp'
+import { getHomeZone } from '@/lib/identity'
+import { displayStatus } from '@/lib/status'
 import { HomeScreen } from '@/screens/HomeScreen'
 import { ListScreen } from '@/screens/ListScreen'
 import { ZoneScreen } from '@/screens/ZoneScreen'
@@ -37,6 +41,9 @@ import { ThumbDock } from '@/components/shared/ThumbDock'
 import { AppHeader } from '@/components/shared/AppHeader'
 import { CommunityScreen } from '@/screens/CommunityScreen.lazy'
 import { TalkScreen } from '@/screens/TalkScreen.lazy'
+import { CalculatorScreen } from '@/screens/CalculatorScreen.lazy'
+import { PhotoCrushScreen } from '@/screens/PhotoCrushScreen.lazy'
+import { LeaderboardScreen } from '@/screens/LeaderboardScreen.lazy'
 import { HonorsScreen } from '@/screens/HonorsScreen'
 import { AmbassadorScreen } from '@/screens/AmbassadorScreen'
 import { FirstRunOverlay } from '@/screens/FirstRunOverlay'
@@ -60,6 +67,8 @@ interface ReportState {
 }
 
 const LAST_RANK_KEY = 'go_last_rank'
+const PULSE_DATE_KEY = 'go_last_pulse_date'
+const PULSE_STATUS_KEY = 'go_last_pulse_status'
 const rankIdx = (key: string) => {
   const i = RANKS.findIndex((r) => r.key === key)
   return i < 0 ? 0 : i
@@ -114,6 +123,52 @@ function Shell() {
       })
       .catch(() => { /* offline / no profile yet — header falls back to Observer */ })
   }, [])
+
+  // today_pulse — fires at most once per calendar day AND only when the home-zone status changed
+  // vs the stored snapshot (D-05 / NOTIF-04). Runs after snapshot loads so status is available.
+  // Wrapped in a separate effect so it re-runs when snapshot changes (profile poll / invalidation).
+  useEffect(() => {
+    const homeZone = getHomeZone()
+    if (!homeZone) return
+    const zonePin = snapshot?.macros?.find((m) => m.id === homeZone.id) ?? null
+    const currentStatus = zonePin ? displayStatus(zonePin) : null
+    if (!currentStatus) return
+    const today = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+    let lastDate: string | null = null
+    let lastStatus: string | null = null
+    try {
+      lastDate = localStorage.getItem(PULSE_DATE_KEY)
+      lastStatus = localStorage.getItem(PULSE_STATUS_KEY)
+    } catch { /* storage unavailable */ }
+    if (shouldFirePulse(lastDate, lastStatus, today, currentStatus)) {
+      useNotifStore.getState().add({ type: 'today_pulse', payload: { zone: homeZone.name, status: currentStatus } })
+    }
+    // Always write both keys after the check so tomorrow has a valid baseline (Pitfall 4).
+    try {
+      localStorage.setItem(PULSE_DATE_KEY, today)
+      localStorage.setItem(PULSE_STATUS_KEY, currentStatus)
+    } catch { /* storage unavailable */ }
+  }, [snapshot])
+
+  // push_alert — bridge from the Service Worker push handler to the notification tray (D-06 / NOTIF-07).
+  // The SW broadcasts go_push_notif when a push arrives while the app is open. We register a cleanup-safe
+  // listener here that destructures ONLY { title, body } from the payload — never spread the raw object.
+  // Destructure-only pattern (Pitfall 5 / D-15): any extra fields in the raw message are silently dropped.
+  useEffect(() => {
+    if (!navigator.serviceWorker) return
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type !== 'go_push_notif') return
+      // Destructure-only: no spread. Only the allowed display fields cross the SW boundary (D-15).
+      const { title, body } = event.data.payload as { title: string; body: string }
+      useNotifStore.getState().add({
+        type: 'push_alert',
+        payload: { title: String(title ?? ''), body: String(body ?? '') },
+      })
+    }
+    navigator.serviceWorker.addEventListener('message', handler)
+    return () => navigator.serviceWorker.removeEventListener('message', handler)
+  }, [])
+
   const dataSaver = useAppStore((s) => s.dataSaver)
   const setDataSaver = useAppStore((s) => s.setDataSaver)
   const firstRunDone = useAppStore((s) => s.firstRunDone)
@@ -185,6 +240,13 @@ function Shell() {
   }, [nameGateSignal, nameGateMode])
   const [shareOpen, setShareOpen] = useState(false)
   const [toast, setToast] = useState<{ tone: ToastTone; text: string } | null>(null)
+
+  // Notification tray open/close state — owned here so AppHeader + NotifTray share the same toggle.
+  const [trayOpen, setTrayOpen] = useState(false)
+  // Derive unseenCount from the notif store (live badge source): items newer than the last seen cursor.
+  const notifItems = useNotifStore((s) => s.items)
+  const lastSeenTs = useNotifStore((s) => s.lastSeenTs)
+  const unseenCount = notifItems.filter((n) => n.ts > lastSeenTs).length
   const [confettiKey, setConfettiKey] = useState(0) // bump to re-fire the report confetti
   const [pushPrompt, setPushPrompt] = useState<{ id: string; name: string } | null>(null)
 
@@ -236,6 +298,8 @@ function Shell() {
         if (rankedUp) {
           // Rank-up: a bigger, clearly celebratory beat — confetti + a prominent congratulatory toast.
           flash(`🎉 You're now a ${newRank.label}!`, 'on')
+          // Notify the bell tray about the rank-up (D-15: rank key + label only, no IDs).
+          useNotifStore.getState().add({ type: 'xp_rankup', payload: { newRankKey: newRank.key, newRankLabel: newRank.label } })
         } else {
           flash(`+XP · ${profile.rankLabel}${profile.toNext ? ` · ${profile.toNext} to next rank` : ''}`, 'on')
         }
@@ -273,7 +337,22 @@ function Shell() {
       {/* Global brand bar — identical on every primary tab. Drill-down screens (zone/list/about/honors)
           keep their own back-arrow headers instead. */}
       {(route.name === 'home' || route.name === 'map' || route.name === 'news' || route.name === 'community' || route.name === 'talk' || route.name === 'profile') && (
-        <AppHeader onProfile={() => navigate({ name: 'profile' })} onAbout={() => navigate({ name: 'about' })} />
+        <>
+          <AppHeader
+            onProfile={() => navigate({ name: 'profile' })}
+            onBell={() => setTrayOpen(true)}
+            unseenCount={unseenCount}
+          />
+          {/* NotificationTray — lazy-loaded, mounts when trayOpen=true */}
+          {trayOpen && (
+            <Suspense fallback={null}>
+              <NotificationTray
+                onClose={() => setTrayOpen(false)}
+                onAbout={() => navigate({ name: 'about' })}
+              />
+            </Suspense>
+          )}
+        </>
       )}
       <div style={{ flex: 1, minHeight: 0, position: 'relative', isolation: 'isolate' }}>
         {route.name === 'home' && (
@@ -289,6 +368,7 @@ function Shell() {
             onCommunity={() => navigate({ name: 'community' })}
             onNews={() => navigate({ name: 'news' })}
             onReport={(action) => openReport(action, null)}
+            onOpenTool={(id) => { if (id === 'calculator') navigate({ name: 'calculator' }); if (id === 'photoCrush') navigate({ name: 'photo-crush' }) }}
           />
         )}
         {route.name === 'list' && (
@@ -355,6 +435,24 @@ function Shell() {
           </Suspense>
         )}
 
+        {route.name === 'calculator' && (
+          <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
+            <CalculatorScreen onBack={() => navigate({ name: 'home' })} />
+          </Suspense>
+        )}
+
+        {route.name === 'photo-crush' && (
+          <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
+            <PhotoCrushScreen onBack={() => navigate({ name: 'home' })} />
+          </Suspense>
+        )}
+
+        {route.name === 'leaderboard' && (
+          <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
+            <LeaderboardScreen onBack={() => navigate({ name: 'home' })} />
+          </Suspense>
+        )}
+
         {toast && (
           <Toast tone={toast.tone} onClose={() => setToast(null)}>
             {toast.text}
@@ -374,12 +472,17 @@ function Shell() {
       )}
 
       {/* Mini radio player — discreet global play/pause for the single fixed station. Audio lives in
-          the radioStore singleton, so it keeps playing across tab navigation. */}
-      <RadioPlayer />
+          the radioStore singleton, so it keeps playing across tab navigation. Suppressed on the
+          photo-crush route: the in-game MiniRadio is the single radio surface there (D-04). */}
+      {route.name !== 'photo-crush' && route.name !== 'leaderboard' && <RadioPlayer />}
 
-      {/* Bottom navigation — present on EVERY screen so any section is one tap away. Highlights a tab
-          only on the five tab routes; drill-down routes (zone/list/talk/about) highlight nothing. */}
-      <BottomNav active={route.name} onNav={(t) => navigate({ name: t })} nameClaimed={nameClaimed} />
+      {/* Bottom navigation — present on every screen so any section is one tap away, EXCEPT the
+          full-screen Calculator and Photo Crush utilities (full-screen routes, no BottomNav per D-06).
+          Highlights a tab only on the five tab routes; drill-down routes
+          (zone/list/talk/about) highlight nothing. */}
+      {route.name !== 'calculator' && route.name !== 'photo-crush' && route.name !== 'leaderboard' && (
+        <BottomNav active={route.name} onNav={(t) => navigate({ name: t })} nameClaimed={nameClaimed} />
+      )}
 
       {report && <ReportSheet initialAction={report.action} target={report.target} snapshot={snapshot} onClose={closeReport} />}
 

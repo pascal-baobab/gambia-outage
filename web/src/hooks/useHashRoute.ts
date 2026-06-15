@@ -16,6 +16,9 @@ export type Route =
   | { name: 'news' }
   | { name: 'su'; slug?: string } // hidden superadmin login at #/su/<secret-slug>
   | { name: 'ambassador'; token: string }
+  | { name: 'calculator' }
+  | { name: 'photo-crush' }
+  | { name: 'leaderboard' }
 
 function parse(hash: string): Route {
   const h = hash.replace(/^#/, '')
@@ -33,6 +36,9 @@ function parse(hash: string): Route {
   if (head === 'su') return { name: 'su', slug: parts[1] ? decodeURIComponent(parts[1]) : undefined }
   if (head === 'zone' && parts[1]) return { name: 'zone', id: decodeURIComponent(parts[1]) }
   if (head === 'ambassador' && parts[1]) return { name: 'ambassador', token: decodeURIComponent(parts[1]) }
+  if (head === 'calculator') return { name: 'calculator' }
+  if (head === 'photo-crush') return { name: 'photo-crush' }
+  if (head === 'leaderboard') return { name: 'leaderboard' }
   return { name: 'home' }
 }
 
@@ -70,6 +76,15 @@ export function navigate(route: Route): void {
       break
     case 'ambassador':
       window.location.hash = `#/ambassador/${encodeURIComponent(route.token)}`
+      break
+    case 'calculator':
+      window.location.hash = '#/calculator'
+      break
+    case 'photo-crush':
+      window.location.hash = '#/photo-crush'
+      break
+    case 'leaderboard':
+      window.location.hash = '#/leaderboard'
       break
     case 'zone':
       window.location.hash = `#/zone/${encodeURIComponent(route.id)}`

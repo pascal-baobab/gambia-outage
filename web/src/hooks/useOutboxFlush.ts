@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createReport, isDuplicateError } from '@/lib/api'
 import { flushOutbox, onOutboxChange } from '@/lib/outbox'
+import { useNotifStore } from '@/app/notifStore'
 
 export function useOutboxFlush(onFlushed?: (sent: number) => void) {
   const qc = useQueryClient()
@@ -16,6 +17,9 @@ export function useOutboxFlush(onFlushed?: (sent: number) => void) {
       const { sent } = await flushOutbox(
         async (input) => { await createReport(input) },
         isDuplicateError,
+        // Per-item delivery callback: adds an outbox_delivered notification with the human
+        // zone label only (D-15 — never item.client_uuid or any report/event ID).
+        (item) => useNotifStore.getState().add({ type: 'outbox_delivered', payload: { place: item.place } }),
       )
       if (active && sent > 0) {
         qc.invalidateQueries({ queryKey: ['snapshot'] })

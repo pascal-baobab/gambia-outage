@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fmtHM } from './format'
+import { fmtHM, localizeNum } from './format'
 
 describe('fmtHM — must match design/shared-ui.jsx exactly', () => {
   it('zero-pads minutes to 2 digits', () => {
@@ -20,5 +20,23 @@ describe('fmtHM — must match design/shared-ui.jsx exactly', () => {
   })
   it('matches a large duration', () => {
     expect(fmtHM(692)).toBe('11h 32m')
+  })
+})
+
+describe('localizeNum — display-layer only, internal state always ASCII', () => {
+  it('converts digits to Arabic-Indic in ar locale', () => {
+    expect(localizeNum('123', 'ar')).toBe('١٢٣')
+  })
+  it('converts decimal number', () => {
+    expect(localizeNum('3.14', 'ar')).toBe('٣.١٤')
+  })
+  it('leaves non-digit chars untouched', () => {
+    expect(localizeNum('Error', 'ar')).toBe('Error')
+  })
+  it('is a no-op for en locale', () => {
+    expect(localizeNum('3.14', 'en')).toBe('3.14')
+  })
+  it('is a no-op for fr locale', () => {
+    expect(localizeNum('0', 'fr')).toBe('0')
   })
 })

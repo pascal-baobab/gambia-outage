@@ -784,6 +784,8 @@ export const fr: Strings = {
     calcSub: 'Calculs du quotidien',
     gameSub: 'Match-3 · tuiles gambiennes',
     soonSub: 'D\'autres outils arrivent',
+    addOns: 'Extensions',
+    boardSub: 'Meilleurs scores de la semaine',
   },
   calculator: {
     title: 'Calculatrice',

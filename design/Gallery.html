@@ -59,6 +59,7 @@
   <script type="text/babel" src="avatar-picker.jsx"></script>
   <script type="text/babel" src="tools-hub.jsx"></script>
   <script type="text/babel" src="leaderboard.jsx"></script>
+  <script type="text/babel" src="add-ons-launcher.jsx"></script>
   <script type="text/babel">
     const { PhoneShell } = window;
     function LangToggle({ lang, set }) {
@@ -117,6 +118,8 @@
           <ToolsFrame />
           <Frame n="6" title="Zone Leaderboard (SKETCH)" desc="Phase 6 throwaway sketch · pseudonym + zone rows · weekly reset · zone filter chips · NameGate-gated submit (toggle no-pseudonym state at bottom) · NOT the final design bundle"
             render={function(l){ return <window.LeaderboardScreen lang={l} onBack={function(){}} />; }} />
+          <Frame n="7" title="Add-ons Launcher (SKETCH)" desc="Discoverability fix · radio strip gains an apps button → popover for Radio/Calculator/Photo-Crush/Leaderboard, reachable from every screen · NOT the final design bundle"
+            render={function(l){ return <window.AddOnsLauncherDemo lang={l} />; }} />
         </React.Fragment>
       );
     }

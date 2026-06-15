@@ -788,6 +788,8 @@ export const en = {
     calcSub: 'Quick everyday maths',
     gameSub: 'Match-3 · Gambia tiles',
     soonSub: 'More tools on the way',
+    addOns: 'Add-ons',
+    boardSub: 'Weekly top scores',
   },
   calculator: {
     title: 'Calculator',

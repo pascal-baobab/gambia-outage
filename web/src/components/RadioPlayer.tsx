@@ -9,6 +9,7 @@ import { useRadio } from '@/app/radioStore'
 import { RADIO_STATIONS } from '@/lib/constants'
 import { useNowPlaying } from '@/lib/nowPlaying'
 import { useT } from '@/i18n/useT'
+import { navigate } from '@/hooks/useHashRoute'
 
 const LIVE_RED = ACCENT.live
 
@@ -77,6 +78,10 @@ export function RadioPlayer() {
   const station = RADIO_STATIONS[stationIndex] || RADIO_STATIONS[0]
   const canPick = RADIO_STATIONS.length > 1
   const [picker, setPicker] = useState(false)
+  // Add-ons launcher (discoverability fix): the global strip is the entry point to every add-on —
+  // Radio (this picker), Calculator, Photo-Crush, Zone Leaderboard — reachable from any screen
+  // instead of buried in the Home Tools hub.
+  const [menu, setMenu] = useState(false)
 
   const np = useNowPlaying()
   const track = np ? (np.artist ? `${np.artist} — ${np.title}` : np.title) : null
@@ -103,6 +108,30 @@ export function RadioPlayer() {
     >
       {/* goTrackLoop: 3 seamless passes (3.5s each, snap at -50% is invisible — see TrackTicker), then rest until 15s. */}
       <style>{'@keyframes goWave{0%,100%{transform:scaleY(0.22)}50%{transform:scaleY(1)}}@keyframes goRpFade{from{opacity:0}to{opacity:1}}@keyframes goTrackLoop{0%{transform:translateX(0)}23.3%{transform:translateX(-50%)}23.34%{transform:translateX(0)}46.63%{transform:translateX(-50%)}46.67%{transform:translateX(0)}69.96%{transform:translateX(-50%)}70%,100%{transform:translateX(0)}}'}</style>
+
+      {/* Add-ons launcher — opens the add-ons menu (Radio / Calculator / Photo-Crush / Leaderboard). */}
+      <button
+        onClick={() => setMenu(true)}
+        aria-label={t.tools.addOns}
+        aria-haspopup="menu"
+        aria-expanded={menu}
+        style={{
+          width: 30,
+          height: 30,
+          flexShrink: 0,
+          borderRadius: 9,
+          border: `1.5px solid ${menu ? GPT_T.ink : GPT_T.line}`,
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: menu ? GPT_T.ink : GPT_T.wash,
+          color: menu ? '#fff' : GPT_T.ink70,
+        }}
+      >
+        <AppsIcon />
+      </button>
+
       <button
         onClick={toggle}
         aria-label={active ? t.radio.pauseAria : t.radio.playAria}
@@ -174,8 +203,98 @@ export function RadioPlayer() {
       </button>
 
       {picker && <StationPicker current={stationIndex} onClose={() => setPicker(false)} />}
+      {menu && (
+        <AddOnsMenu
+          onClose={() => setMenu(false)}
+          onRadio={() => { setMenu(false); if (canPick) setPicker(true) }}
+        />
+      )}
     </div>
   )
+}
+
+// Add-ons menu — bottom sheet (mirrors StationPicker) listing every add-on. The global radio strip
+// is the single discoverable entry point; Calculator/Photo-Crush/Leaderboard navigate to their routes,
+// Radio opens the station picker (the strip already controls playback).
+function AddOnsMenu({ onClose, onRadio }: { onClose: () => void; onRadio: () => void }) {
+  const t = useT()
+  const status = useRadio((s) => s.status)
+  const radioActive = status === 'playing' || status === 'loading'
+  const go = (name: 'calculator' | 'photo-crush' | 'leaderboard') => {
+    onClose()
+    navigate({ name })
+  }
+  const rows = [
+    { key: 'radio', glyph: <RadioGlyph c={FLAG.green} />, label: t.radio.pickerTitle, sub: t.radio.pickerSubtitle(RADIO_STATIONS.length), active: radioActive, onClick: onRadio },
+    { key: 'calc', glyph: <CalcGlyph c={FLAG.blue} />, label: t.tools.calculator, sub: t.tools.calcSub, active: false, onClick: () => go('calculator') },
+    { key: 'game', glyph: <GameGlyph c={ACCENT.tile4} />, label: t.tools.photoCrush, sub: t.tools.gameSub, active: false, onClick: () => go('photo-crush') },
+    { key: 'board', glyph: <TrophyGlyph c={ACCENT.star} />, label: t.leaderboard.title, sub: t.tools.boardSub, active: false, onClick: () => go('leaderboard') },
+  ]
+  return (
+    <div
+      role="dialog"
+      aria-label={t.tools.addOns}
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(15,23,34,0.34)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', animation: 'goRpFade .15s ease' }}
+    >
+      <style>{'@keyframes goRpFade{from{opacity:0}to{opacity:1}}@keyframes goRpUp{from{transform:translateY(14px)}to{transform:translateY(0)}}'}</style>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: GPT_T.paper,
+          borderTopLeftRadius: 18,
+          borderTopRightRadius: 18,
+          boxShadow: '0 -10px 30px rgba(15,23,34,0.18)',
+          paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
+          fontFamily: GPT_FONT,
+          animation: 'goRpUp .2s ease',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+          <span style={{ width: 38, height: 4, borderRadius: 2, background: GPT_T.line2 }} />
+        </div>
+        <div style={{ padding: '8px 18px 6px', fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: GPT_T.ink45 }}>
+          {t.tools.addOns}
+        </div>
+        <div role="menu" style={{ padding: '0 8px 6px' }}>
+          {rows.map((r) => (
+            <button
+              key={r.key}
+              role="menuitem"
+              onClick={r.onClick}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                width: '100%',
+                border: 'none',
+                background: r.active ? GPT_T.wash : 'transparent',
+                borderRadius: 12,
+                padding: '11px 12px',
+                cursor: 'pointer',
+                textAlign: 'start',
+                fontFamily: GPT_FONT,
+              }}
+            >
+              <span style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: r.active ? rgba(FLAG.green, 0.14) : GPT_T.wash }}>
+                {r.glyph}
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 14.5, fontWeight: 800, color: GPT_T.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.label}</span>
+                <span style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: GPT_T.ink45, marginTop: 1 }}>{r.sub}</span>
+              </span>
+              {r.active ? <CheckIcon /> : <ChevronRight />}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function rgba(hex: string, a: number): string {
+  const n = parseInt(hex.replace('#', ''), 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
 }
 
 function StationPicker({ current, onClose }: { current: number; onClose: () => void }) {
@@ -333,6 +452,71 @@ function StarIcon({ filled }: { filled: boolean }) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? ACCENT.star : 'none'} stroke={filled ? ACCENT.star : GPT_T.ink25} strokeWidth="1.8" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
       <path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.4l-5.8 3.05 1.1-6.47L2.6 9.35l6.5-.95z" />
+    </svg>
+  )
+}
+
+// ── Add-ons launcher glyphs (GPTIcon has no calculator/game/trophy cases — inline, per ToolsHub). ──
+function AppsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="4" y="4" width="6" height="6" rx="1.6" />
+      <rect x="14" y="4" width="6" height="6" rx="1.6" />
+      <rect x="4" y="14" width="6" height="6" rx="1.6" />
+      <rect x="14" y="14" width="6" height="6" rx="1.6" />
+    </svg>
+  )
+}
+
+function RadioGlyph({ c }: { c: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="8" width="18" height="12" rx="3" />
+      <circle cx="15" cy="14" r="3" />
+      <path d="M7 4l9 4" />
+      <circle cx="7.5" cy="13.5" r="0.6" fill={c} />
+    </svg>
+  )
+}
+
+function CalcGlyph({ c }: { c: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="4" y="3" width="16" height="18" rx="3" stroke={c} strokeWidth="2" />
+      <rect x="7" y="6" width="10" height="3.5" rx="1" fill={c} />
+      <g fill={c}>
+        <circle cx="8.5" cy="14" r="1.1" /><circle cx="12" cy="14" r="1.1" /><circle cx="15.5" cy="14" r="1.1" />
+        <circle cx="8.5" cy="17.5" r="1.1" /><circle cx="12" cy="17.5" r="1.1" /><circle cx="15.5" cy="17.5" r="1.1" />
+      </g>
+    </svg>
+  )
+}
+
+function GameGlyph({ c }: { c: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="3" y="3" width="8" height="8" rx="2" fill={c} />
+      <rect x="13" y="3" width="8" height="8" rx="2" fill={c} opacity="0.55" />
+      <rect x="3" y="13" width="8" height="8" rx="2" fill={c} opacity="0.55" />
+      <rect x="13" y="13" width="8" height="8" rx="2" fill={c} />
+    </svg>
+  )
+}
+
+function TrophyGlyph({ c }: { c: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3" />
+      <path d="M12 13v4M9 20h6M10 17h4" />
+    </svg>
+  )
+}
+
+function ChevronRight() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GPT_T.ink25} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+      <path d="m9 6 6 6-6 6" />
     </svg>
   )
 }

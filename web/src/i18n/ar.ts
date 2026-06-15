@@ -785,6 +785,8 @@ export const ar: Strings = {
     calcSub: 'حسابات يومية سريعة',
     gameSub: 'مطابقة 3 · بلاطات غامبية',
     soonSub: 'المزيد من الأدوات قريباً',
+    addOns: 'الإضافات',
+    boardSub: 'أفضل نتائج الأسبوع',
   },
   calculator: {
     title: 'الآلة الحاسبة',

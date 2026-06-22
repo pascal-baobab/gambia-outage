@@ -1,21 +1,22 @@
-// IncidentScreen.tsx — full-screen incident reporting surface (INC-02, INC-03, D-09, D-10).
-// Shell discipline mirrors LeaderboardScreen: no AppHeader/BottomNav wrapping (they remain in App.tsx);
-// token-only styling (GPT_T/FLAG/ACCENT from @/lib/tokens — D-12); RTL via useLang().
+// IncidentScreen.tsx — the "Incidents" primary tab (INC-02, INC-03, D-09, D-10).
+// It is a top-level nav tab (replaced the global Map tab), so it sits UNDER the global AppHeader +
+// above the BottomNav (both owned by App.tsx, same as the other tabs) — it must NOT be position:absolute.
+// Brand-consistent ScreenHeader (logo + title, notch=false) like the Map tab; token-only styling
+// (GPT_T/FLAG/ACCENT from @/lib/tokens — D-12); RTL via useLang().
 //
-// Layout:
-//   ┌─ TopBar (back + title + icon) ──────────────────────────────────────────────┐
-//   ├─ Category filter chips (All + 7 slugs) ─────────────────────────────────────┤
+// Layout (below the global AppHeader):
+//   ┌─ ScreenHeader (logo + "Incident Reports") + subtitle ───────────────────────┐
+//   ├─ Category filter chips (All + 7 slugs, wrapped to 2 rows) ───────────────────┤
 //   ├─ Feed/Map toggle (D-09: feed primary, map second) ──────────────────────────┤
 //   ├─ (feed view) IncidentFeedCard list or IncidentForm (geo-gated) ─────────────┤
 //   └─ (map view)  GambiaMapLive with incidents prop ────────────────────────────-┘
 //
 // Geo-gate: when blocked, the report CTA is disabled and t.incidents.errors.geoBlocked is shown.
-// RTL: dir="rtl" when lang === 'ar'; back-arrow mirrors via transform scaleX(-1).
 import { useState, Suspense } from 'react'
-import { GPT_T, GPT_FONT, FLAG, ACCENT } from '@/lib/tokens'
+import { GPT_T, GPT_FONT, FLAG, ACCENT, BUTTON_PRIMARY } from '@/lib/tokens'
 import { useT } from '@/i18n/useT'
 import { useLang } from '@/app/langStore'
-import { GPTIcon } from '@/components/icons'
+import { ScreenHeader } from '@/components/shared/ScreenHeader'
 import { useGeoGate } from '@/hooks/useGeoGate'
 import { useIncidentFeed } from '@/hooks/useIncidents'
 import { useSnapshot } from '@/hooks/useData'
@@ -39,7 +40,7 @@ const CATEGORY_COLOR: Record<string, string> = {
 
 type ViewMode = 'feed' | 'map'
 
-export function IncidentScreen({ onBack }: { onBack?: () => void }) {
+export function IncidentScreen() {
   const t = useT()
   const { lang } = useLang()
   const rtl = lang === 'ar'
@@ -67,8 +68,7 @@ export function IncidentScreen({ onBack }: { onBack?: () => void }) {
   return (
     <div
       style={{
-        position: 'absolute',
-        inset: 0,
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         background: GPT_T.wash,
@@ -76,53 +76,30 @@ export function IncidentScreen({ onBack }: { onBack?: () => void }) {
         direction: rtl ? 'rtl' : 'ltr',
       }}
     >
-      {/* ── TopBar ── */}
+      {/* ── Screen title (brand logo + title), sits under the global AppHeader like the Map tab ── */}
+      <ScreenHeader title={t.incidents.title} notch={false} status={false} />
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '10px 12px',
+          padding: '0 16px 9px',
           background: GPT_T.paper,
           borderBottom: `1px solid ${GPT_T.line}`,
           flexShrink: 0,
+          fontSize: 11.5,
+          fontWeight: 600,
+          color: GPT_T.ink45,
         }}
       >
-        <button
-          aria-label={t.nav.back}
-          onClick={onBack}
-          style={{
-            width: 38,
-            height: 38,
-            border: 'none',
-            background: 'transparent',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            borderRadius: 11,
-            transform: rtl ? 'scaleX(-1)' : undefined,
-          }}
-        >
-          <GPTIcon name="back" size={23} color={GPT_T.ink70} />
-        </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: GPT_T.ink }}>{t.incidents.title}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: GPT_T.ink45 }}>{t.incidents.sub}</div>
-        </div>
-        {/* Water drop icon to represent incidents/rain */}
-        <GPTIcon name="on" size={20} color={FLAG.blue} />
+        {t.incidents.sub}
       </div>
 
-      {/* ── Category filter chips ── */}
+      {/* ── Category filter chips — wrapped to 2 rows so all are visible (no horizontal scroll) ── */}
       <div
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
           gap: 7,
-          overflowX: 'auto',
           padding: '10px 12px',
           flexShrink: 0,
-          WebkitOverflowScrolling: 'touch',
         }}
       >
         {chips.map((c) => {
@@ -257,22 +234,7 @@ export function IncidentScreen({ onBack }: { onBack?: () => void }) {
                 ) : (
                   <button
                     onClick={() => setShowForm(true)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      borderRadius: 14,
-                      border: `1.5px solid ${FLAG.blue}`,
-                      background: FLAG.blue,
-                      color: '#fff',
-                      fontFamily: GPT_FONT,
-                      fontWeight: 800,
-                      fontSize: 15,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                    }}
+                    style={{ ...BUTTON_PRIMARY, width: '100%' }}
                   >
                     {t.incidents.report}
                   </button>

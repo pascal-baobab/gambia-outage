@@ -337,7 +337,7 @@ function Shell() {
       <LaunchBanner />
       {/* Global brand bar — identical on every primary tab. Drill-down screens (zone/list/about/honors)
           keep their own back-arrow headers instead. */}
-      {(route.name === 'home' || route.name === 'map' || route.name === 'news' || route.name === 'community' || route.name === 'talk' || route.name === 'profile') && (
+      {(route.name === 'home' || route.name === 'map' || route.name === 'news' || route.name === 'community' || route.name === 'talk' || route.name === 'profile' || route.name === 'incidents') && (
         <>
           <AppHeader
             onProfile={() => navigate({ name: 'profile' })}
@@ -457,7 +457,7 @@ function Shell() {
 
         {route.name === 'incidents' && (
           <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
-            <IncidentScreen onBack={() => navigate({ name: 'home' })} />
+            <IncidentScreen />
           </Suspense>
         )}
 

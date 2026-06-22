@@ -51,7 +51,7 @@ import { HonorsScreen } from '@/screens/HonorsScreen'
 import { AmbassadorScreen } from '@/screens/AmbassadorScreen'
 import { FirstRunOverlay } from '@/screens/FirstRunOverlay'
 import { NameGate } from '@/screens/NameGate'
-import { hasClaimedName, hasSkippedName, markNameSkipped, clearNameSkipped } from '@/lib/username'
+import { hasClaimedName, markNameSkipped, clearNameSkipped } from '@/lib/username'
 import { useNameGateStore, closeNameGate } from '@/app/nameGateStore'
 import { SplashScreen } from '@/screens/SplashScreen'
 import { ReportSheet, type ReportTarget } from '@/screens/ReportSheet'
@@ -240,7 +240,9 @@ function Shell() {
   const [needName, setNeedName] = useState(false)
   const [nameClaimed, setNameClaimed] = useState(hasClaimedName)
   const [nameGateInitialMode, setNameGateInitialMode] = useState<'create' | 'recover'>('create')
-  useEffect(() => { if (firstRunDone) setNeedName(!hasClaimedName() && !hasSkippedName()) }, [firstRunDone])
+  // Naming is DEFERRED (owner directive 2026-06-22 — one confirmation on first access). The FirstRunOverlay
+  // intro IS the name step; NameGate no longer auto-opens right after first-run. It opens only when a
+  // community action explicitly needs a claimed public name (the nameGateSignal path below).
   const nameGateSignal = useNameGateStore((s) => s.open)
   const nameGateMode = useNameGateStore((s) => s.mode)
   useEffect(() => {

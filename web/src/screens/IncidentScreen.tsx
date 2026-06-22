@@ -263,36 +263,49 @@ export function IncidentScreen({ onReportPowercut }: { onReportPowercut?: () => 
                     <GPTIcon name="close" size={16} color={GPT_T.ink70} />
                   </button>
                 </div>
-                <IncidentForm onSuccess={() => setShowForm(false)} />
+                <IncidentForm onSuccess={() => setShowForm(false)} initialCategory={category} />
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '4px 0 12px' }}>
-                <button onClick={() => setShowForm(true)} style={{ ...BUTTON_PRIMARY, width: '100%' }}>
-                  <AlertTri size={18} color="#fff" /> {t.incidents.report}
-                </button>
-                {onReportPowercut && (
-                  <button
-                    onClick={onReportPowercut}
-                    style={{
-                      width: '100%',
-                      minHeight: 46,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      padding: '11px 16px',
-                      borderRadius: 14,
-                      border: `1.5px solid ${GPT_T.line}`,
-                      background: GPT_T.paper,
-                      color: GPT_T.ink,
-                      fontFamily: GPT_FONT,
-                      fontSize: 14,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <CatGlyph slug={POWERCUT_SLUG} size={17} color={CATEGORY_COLOR[POWERCUT_SLUG]} /> {t.incidents.reportPowercut}
-                  </button>
+                {isPowercutFilter ? (
+                  /* Power-cut filter active → the ONLY report action is the CLASSIC outage flow
+                     (OUT/BACK ReportSheet), NEVER the photo-mandatory incident form. Primary ink CTA so
+                     "select Power cut → report a power cut" is unmistakable (no detour to "add a photo"). */
+                  onReportPowercut && (
+                    <button onClick={onReportPowercut} style={{ ...BUTTON_PRIMARY, width: '100%' }}>
+                      <CatGlyph slug={POWERCUT_SLUG} size={18} color="#fff" /> {t.incidents.reportPowercut}
+                    </button>
+                  )
+                ) : (
+                  <>
+                    <button onClick={() => setShowForm(true)} style={{ ...BUTTON_PRIMARY, width: '100%' }}>
+                      <AlertTri size={18} color="#fff" /> {t.incidents.report}
+                    </button>
+                    {onReportPowercut && (
+                      <button
+                        onClick={onReportPowercut}
+                        style={{
+                          width: '100%',
+                          minHeight: 46,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                          padding: '11px 16px',
+                          borderRadius: 14,
+                          border: `1.5px solid ${GPT_T.line}`,
+                          background: GPT_T.paper,
+                          color: GPT_T.ink,
+                          fontFamily: GPT_FONT,
+                          fontSize: 14,
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <CatGlyph slug={POWERCUT_SLUG} size={17} color={CATEGORY_COLOR[POWERCUT_SLUG]} /> {t.incidents.reportPowercut}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -303,7 +316,7 @@ export function IncidentScreen({ onReportPowercut }: { onReportPowercut?: () => 
             ) : feedQuery.isLoading && !isPowercutFilter && powercuts.length === 0 ? (
               <div style={{ textAlign: 'center', color: GPT_T.ink25, fontSize: 13, fontWeight: 600, padding: '24px 0' }}>…</div>
             ) : !feedHasRows ? (
-              <div style={{ textAlign: 'center', color: GPT_T.ink45, fontSize: 13, fontWeight: 600, padding: '24px 0' }}>{t.incidents.feed.empty}</div>
+              <div style={{ textAlign: 'center', color: GPT_T.ink45, fontSize: 13, fontWeight: 600, padding: '24px 0' }}>{isPowercutFilter ? t.incidents.feed.emptyPowercut : t.incidents.feed.empty}</div>
             ) : (
               <>
                 {showPowercuts && powercuts.map((p) => <PowercutFeedCard key={`pc-${p.id}`} entry={p} />)}

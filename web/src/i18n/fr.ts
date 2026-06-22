@@ -866,6 +866,7 @@ export const fr: Strings = {
     },
     feed: {
       empty: 'Aucun incident signalé dans cette zone pour l\'instant.',
+      emptyPowercut: 'Aucune coupure de courant signalée en ce moment.',
       filterAll: 'Tout',
       error: 'Impossible de charger les incidents — réessayez.',
       feedTab: 'Flux',

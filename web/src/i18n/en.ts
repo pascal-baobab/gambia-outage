@@ -870,6 +870,7 @@ export const en = {
     },
     feed: {
       empty: 'No incidents reported in this area yet.',
+      emptyPowercut: 'No active power cuts reported right now.',
       filterAll: 'All',
       error: "Couldn't load incidents — try again.",
       feedTab: 'Feed',

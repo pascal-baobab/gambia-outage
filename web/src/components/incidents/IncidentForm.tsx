@@ -62,18 +62,22 @@ function CameraGlyph({ size = 22, color = GPT_T.ink70 }: { size?: number; color?
   )
 }
 
-export function IncidentForm({ onSuccess }: { onSuccess?: () => void }) {
+export function IncidentForm({ onSuccess, initialCategory }: { onSuccess?: () => void; initialCategory?: string }) {
   const t = useT()
   const { lang } = useLang()
   const rtl = lang === 'ar'
   const queryClient = useQueryClient()
 
-  // Form state
+  // Form state — pre-select the category the user was filtering by (if it's a civic slug), so opening
+  // the form from a filtered feed doesn't make them re-pick it. 'powercut' is never a form category.
+  const presetCategory: CategorySlug | '' = (CATEGORY_SLUGS as readonly string[]).includes(initialCategory ?? '')
+    ? (initialCategory as CategorySlug)
+    : ''
   const [blob, setBlob] = useState<Blob | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
-  const [category, setCategory] = useState<CategorySlug | ''>('')
+  const [category, setCategory] = useState<CategorySlug | ''>(presetCategory)
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)

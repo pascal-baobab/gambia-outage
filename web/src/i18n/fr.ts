@@ -314,6 +314,7 @@ export const fr: Strings = {
     siteLabel: 'gambiaoutage.com',
     openSource: 'code ouvert',
     updatedMessage: (v, d) => `MIS À JOUR v${v} · ${d}`,
+    updating: 'Mise à jour vers la dernière version…',
     tapToEnter: 'Touchez pour entrer →',
     enterAs: (name) => `Entrer en tant que ${name} →`,
     allowLocation: '📍 Autoriser la position',

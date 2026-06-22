@@ -47,6 +47,9 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
+      // We register the SW manually in lib/pwa.ts to pass updateViaCache:'none' (iOS stale-SW hardening),
+      // so suppress the auto-injected registerSW.js + its <script> tag (avoids a double registration).
+      injectRegister: false,
       includeAssets: [
         'favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
         'tiles/tile-1.svg', 'tiles/tile-2.svg', 'tiles/tile-3.svg',

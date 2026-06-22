@@ -315,6 +315,7 @@ export const ar: Strings = {
     siteLabel: 'gambiaoutage.com',
     openSource: 'مفتوح المصدر',
     updatedMessage: (v, d) => `تم التحديث إلى v${v} · ${d}`,
+    updating: 'جارٍ التحديث إلى أحدث إصدار…',
     tapToEnter: 'اضغط في أي مكان للدخول →',
     enterAs: (name) => `الدخول باسم ${name} →`,
     allowLocation: '📍 السماح بالموقع',

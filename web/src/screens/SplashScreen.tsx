@@ -49,8 +49,11 @@ function Bolt({ cls, fill = '#dceeff' }: { cls: string; fill?: string }) {
 const TOTAL_MS = 4500
 const HOLD_MS = 3000
 // Extra splash hold (on top of the normal dwell) granted ONLY while a newer build's under-splash
-// reload is still mid-flight — so the reload lands behind the animation, not after the user enters.
-const UPDATE_HOLD_MS = 3500
+// reload is still mid-flight. Generous (12s) because on slow networks the new SW must precache the whole
+// build before it can activate — a short window let the user fall through onto the OLD build. The wait
+// is COMMUNICATED with an on-splash "Updating…" countdown (never a frozen splash); if it expires the app
+// enters the current build and the update applies on the next open. Kept in sync with appRefresh ARM_WINDOW_MS.
+const UPDATE_HOLD_MS = 12000
 
 export function SplashScreen({
   onDone,
@@ -73,6 +76,8 @@ export function SplashScreen({
   const timer = useRef<number | null>(null)
   const [revealed, setRevealed] = useState(reduce) // buttons appear once the animation settles
   const [engaged, setEngaged] = useState(false) // true once a button is tapped → show "tap to enter"
+  // Remaining seconds while the splash holds for a newer build's reload (null = not holding) → countdown UI.
+  const [updateHold, setUpdateHold] = useState<number | null>(null)
   // Returning users (an established account on this device) get a one-tap shortcut straight to their
   // account — no waiting out the splash, no re-onboarding. Hidden on a genuine first access.
   const [acct, setAcct] = useState<{ avatarId: string; nickname: string } | null>(null)
@@ -106,6 +111,8 @@ export function SplashScreen({
         elapsed += wait
         const reachedDwell = elapsed >= enterMs
         const holdForUpdate = isUpdateApplying() && elapsed < deadline
+        // Surface the wait as a countdown (seconds left) so the held splash reads as "updating", not frozen.
+        setUpdateHold(reachedDwell && holdForUpdate ? Math.max(1, Math.ceil((deadline - elapsed) / 1000)) : null)
         if (reachedDwell && !holdForUpdate) { onDone(); return }
         tick(200)
       }, wait)
@@ -278,6 +285,28 @@ export function SplashScreen({
       <div style={{ position: 'absolute', bottom: 26, left: 0, right: 0, textAlign: 'center', fontSize: 12, fontWeight: 600, color: GPT_T.ink25, opacity: engaged ? 1 : 0, transition: 'opacity .3s' }}>
         {t.splash.tapToEnter}
       </div>
+
+      {/* Newer build is landing under the splash: communicate the (bounded) wait with a countdown so the
+          held splash reads as "updating", never frozen. Paper pill = legible on both light + dark concepts. */}
+      {updateHold !== null && (
+        <div style={{ position: 'absolute', bottom: 24, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 9, pointerEvents: 'none' }}>
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 9,
+              padding: '8px 15px', borderRadius: 999,
+              background: GPT_T.paper, color: GPT_T.ink, border: `1px solid ${GPT_T.line}`,
+              boxShadow: '0 8px 24px rgba(15,23,34,0.28)',
+              fontFamily: GPT_FONT, fontSize: 12.5, fontWeight: 700,
+            }}
+          >
+            <span className="go-upd-spin" aria-hidden="true" />
+            <span>{t.splash.updating}</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums', opacity: 0.6, minWidth: 13, textAlign: 'center' }}>{updateHold}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -293,6 +322,8 @@ const SPLASH_CSS = `
   .go-splash .tag{margin-top:14px;display:flex;align-items:center;gap:10px;}
   .go-splash .tag .lbl{font-size:12.5px;font-weight:800;letter-spacing:2.6px;text-transform:uppercase;color:${GPT_T.ink45};}
   .go-splash .url{margin-top:16px;font-size:12.5px;font-weight:700;letter-spacing:.4px;color:${GPT_T.ink25};}
+  .go-splash .go-upd-spin{width:14px;height:14px;border-radius:50%;border:2px solid ${GPT_T.line};border-top-color:${GPT_T.ink};display:inline-block;animation:goUpdSpin .8s linear infinite;}
+  @keyframes goUpdSpin{to{transform:rotate(360deg);}}
 
   /* shared storm layer — same placement vocabulary across all concepts */
   .go-splash .storm{position:absolute;inset:0;background:#03060a;opacity:0;z-index:5;pointer-events:none;}

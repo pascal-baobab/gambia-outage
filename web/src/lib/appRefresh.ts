@@ -12,7 +12,11 @@
 //  - A sessionStorage guard caps it at one reload per tab session (no reload loops).
 
 const RELOAD_GUARD = 'go_sw_reloaded'
-const ARM_WINDOW_MS = 8000
+// Kept in sync with SplashScreen's extended update-hold (enterMs 4500 + UPDATE_HOLD_MS 12000 ≈ 16.5s):
+// on slow networks the new SW must precache the whole build before it can activate, so the under-splash
+// reload must stay armed for the WHOLE extended hold — otherwise the reload lands after the window and
+// is suppressed, leaving the user on the old build. Small buffer over the splash deadline.
+const ARM_WINDOW_MS = 17000
 
 // On iOS the PWA is often resumed from suspension (JS doesn't re-execute, splash never re-shows).
 // Trigger a passive update check whenever the app comes back to the foreground so the next cold open

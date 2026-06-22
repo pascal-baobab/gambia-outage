@@ -166,4 +166,14 @@ export function initPwa() {
     notify()
   })
   window.addEventListener('appinstalled', () => { markInstalled() })
+
+  // Register the service worker ourselves (vite-plugin-pwa injectRegister is OFF) so we can pass
+  // updateViaCache:'none'. Without it iOS may serve a STALE sw.js from its own HTTP cache on update
+  // checks and pin the old worker — belt-and-suspenders with the no-cache header + the CF cache-bypass
+  // rule. PROD-only: there is no built sw.js in dev (devOptions.enabled=false), so registering would 404.
+  if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).catch(() => { /* registration failed — app still works online */ })
+    })
+  }
 }

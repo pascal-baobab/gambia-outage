@@ -318,6 +318,7 @@ export const en = {
     siteLabel: 'gambiaoutage.com',
     openSource: 'open source',
     updatedMessage: (v: string, d: string) => `UPDATED TO v${v} · ${d}`,
+    updating: 'Updating to the latest version…',
     tapToEnter: 'Tap anywhere to enter →',
     enterAs: (name: string) => `Enter as ${name} →`,
     allowLocation: '📍 Allow location',

@@ -1,4 +1,4 @@
-// IncidentForm.tsx — incident report form (INC-02, INC-03, D-10).
+// IncidentForm.tsx — incident report form (INC-02, INC-03, D-10; claude-design pass).
 //
 // Photo pipeline: <input type=file> → createImageBitmap(file) → square-crop centered →
 // canvas re-encode 1024×1024 JPEG (EXIF stripped; mirrors tilePhotos.ts cropToBlob,
@@ -11,28 +11,15 @@
 //
 // Submit: validates photo + position + category; calls submitIncident from api.ts with
 // the stripped Blob and the adjusted lat/lng. All strings from t.incidents.*.
-// Token-only styling (GPT_T/FLAG/ACCENT — D-12). No raw hex except '#fff'.
+// Token-only styling (GPT_T/FLAG/ACCENT — D-12); '#fff' only raw literal.
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { GPT_T, GPT_FONT, FLAG, ACCENT, BUTTON_PRIMARY } from '@/lib/tokens'
+import { GPT_T, GPT_FONT, FLAG, BUTTON_PRIMARY } from '@/lib/tokens'
 import { useT } from '@/i18n/useT'
+import { useLang } from '@/app/langStore'
 import { submitIncident } from '@/lib/api'
 import { IncidentLocationPicker } from './IncidentLocationPicker'
-
-// ── Category slugs (closed set) ─────────────────────────────────────────────
-const CATEGORY_SLUGS = ['flooding', 'road', 'water', 'electricity', 'waste', 'building', 'other'] as const
-type CategorySlug = (typeof CATEGORY_SLUGS)[number]
-
-// Category → token color for the picker swatches (mirrors GambiaMapLive + IncidentFeedCard).
-const CATEGORY_COLOR: Record<string, string> = {
-  flooding: FLAG.blue,
-  road: ACCENT.amber,
-  water: ACCENT.tile5,
-  electricity: ACCENT.star,
-  waste: GPT_T.ink45,
-  building: FLAG.red,
-  other: ACCENT.tile4,
-}
+import { CATEGORY_SLUGS, type CategorySlug, CATEGORY_COLOR, catText, CatGlyph, AlertTri, rgba } from './incidentVisuals'
 
 // ── Canvas EXIF-strip (adapted from tilePhotos.ts cropToBlob, output 1024×1024) ──────────────
 // Re-encoding to JPEG via OffscreenCanvas or <canvas> strips ALL EXIF tags regardless of size.
@@ -62,8 +49,23 @@ async function cropToBlob1024(source: ImageBitmap): Promise<Blob> {
   })
 }
 
+// ── small inline glyphs / helpers ────────────────────────────────────────────
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize: 12, fontWeight: 800, color: GPT_T.ink70, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 7 }}>{children}</div>
+}
+function CameraGlyph({ size = 22, color = GPT_T.ink70 }: { size?: number; color?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" aria-hidden="true">
+      <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7H7l1.2-2h7.6L17 7h2.5A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-9Z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="12" cy="12.5" r="3.4" stroke={color} strokeWidth="1.8" />
+    </svg>
+  )
+}
+
 export function IncidentForm({ onSuccess }: { onSuccess?: () => void }) {
   const t = useT()
+  const { lang } = useLang()
+  const rtl = lang === 'ar'
   const queryClient = useQueryClient()
 
   // Form state
@@ -165,51 +167,43 @@ export function IncidentForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <form onSubmit={(e) => { void handleSubmit(e) }} style={{ fontFamily: GPT_FONT }}>
-      {/* ── Photo input ── */}
-      <div style={{ marginBottom: 14 }}>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: GPT_T.ink70,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            marginBottom: 6,
-          }}
-        >
-          {t.incidents.form.photo}
-        </div>
+    <form onSubmit={(e) => { void handleSubmit(e) }} style={{ fontFamily: GPT_FONT, textAlign: rtl ? 'right' : 'left' }}>
+      {/* ── Photo dropzone → square preview ── */}
+      <div style={{ marginBottom: 15 }}>
+        <FieldLabel>{t.incidents.form.photo}</FieldLabel>
         <label
           style={{
+            display: 'block',
+            position: 'relative',
             cursor: 'pointer',
             borderRadius: 12,
-            border: `1.5px dashed ${previewUrl ? GPT_T.line : GPT_T.ink45}`,
-            background: GPT_T.wash,
             overflow: 'hidden',
-            minHeight: 80,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            border: previewUrl ? `1px solid ${GPT_T.line}` : `1.5px dashed ${GPT_T.ink45}`,
+            background: GPT_T.wash,
           }}
         >
           {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt={t.incidents.form.photoHint}
-              style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
-            />
+            <>
+              <img
+                src={previewUrl}
+                alt={t.incidents.form.photoHint}
+                style={{ width: '100%', aspectRatio: '16 / 10', objectFit: 'cover', display: 'block' }}
+              />
+              {/* "Evidence" confirmation chip */}
+              <span style={{ position: 'absolute', insetInlineStart: 8, top: 8, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 999, background: rgba(GPT_T.ink, 0.62), color: '#fff', fontSize: 10.5, fontWeight: 800 }}>
+                ✓ {t.incidents.form.evidence}
+              </span>
+              {/* re-pick affordance */}
+              <span style={{ position: 'absolute', insetInlineEnd: 8, top: 8, width: 30, height: 30, borderRadius: 9, background: rgba(GPT_T.ink, 0.62), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CameraGlyph size={16} color="#fff" />
+              </span>
+            </>
           ) : (
-            <div
-              style={{
-                padding: '16px 12px',
-                textAlign: 'center',
-                color: GPT_T.ink45,
-                fontSize: 13,
-                fontWeight: 600,
-              }}
-            >
-              {t.incidents.form.photoHint}
+            <div style={{ minHeight: 116, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '18px 12px' }}>
+              <span style={{ width: 46, height: 46, borderRadius: 13, background: GPT_T.paper, border: `1px solid ${GPT_T.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CameraGlyph size={24} color={GPT_T.ink70} />
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: GPT_T.ink45, textAlign: 'center', lineHeight: 1.4, maxWidth: 220 }}>{t.incidents.form.photoHint}</span>
             </div>
           )}
           <input
@@ -223,76 +217,48 @@ export function IncidentForm({ onSuccess }: { onSuccess?: () => void }) {
       </div>
 
       {/* ── Location field + mini-map picker (D-10) ── */}
-      <div style={{ marginBottom: 14 }}>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: GPT_T.ink70,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            marginBottom: 6,
-          }}
-        >
-          {t.incidents.form.location}
-        </div>
+      <div style={{ marginBottom: 15 }}>
+        <FieldLabel>{t.incidents.form.location}</FieldLabel>
         {lat !== null && lng !== null ? (
           <IncidentLocationPicker lat={lat} lng={lng} onChange={handlePositionChange} />
         ) : (
-          <div
-            style={{
-              padding: '12px 14px',
-              borderRadius: 12,
-              border: `1.5px solid ${GPT_T.line}`,
-              background: GPT_T.wash,
-              fontSize: 13,
-              fontWeight: 600,
-              color: GPT_T.ink45,
-            }}
-          >
+          <div style={{ padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${GPT_T.line}`, background: GPT_T.wash, fontSize: 13, fontWeight: 600, color: GPT_T.ink45 }}>
             {t.incidents.errors.locationRequired}
           </div>
         )}
       </div>
 
-      {/* ── Category picker ── */}
-      <div style={{ marginBottom: 14 }}>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: GPT_T.ink70,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            marginBottom: 8,
-          }}
-        >
-          {t.incidents.form.category}
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      {/* ── Category picker (glyph chips) ── */}
+      <div style={{ marginBottom: 15 }}>
+        <FieldLabel>{t.incidents.form.category}</FieldLabel>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
           {CATEGORY_SLUGS.map((slug) => {
             const on = category === slug
-            const color = CATEGORY_COLOR[slug] ?? GPT_T.ink45
+            const color = CATEGORY_COLOR[slug]
+            const txt = on ? catText(slug) : GPT_T.ink70
             const label = (t.incidents.categories as Record<string, string>)[slug] ?? slug
             return (
               <button
                 key={slug}
                 type="button"
-                onClick={() => setCategory(slug)}
+                onClick={() => { setCategory(slug); if (error === t.incidents.errors.categoryRequired) setError(null) }}
                 style={{
-                  padding: '7px 13px',
+                  padding: '7px 12px',
                   borderRadius: 999,
                   border: `1.5px solid ${on ? color : GPT_T.line}`,
                   background: on ? color : GPT_T.paper,
-                  color: on ? '#fff' : GPT_T.ink70,
+                  color: txt,
                   fontFamily: GPT_FONT,
                   fontWeight: 800,
                   fontSize: 12.5,
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                {label}
+                <CatGlyph slug={slug} size={13} color={on ? txt : color} /> {label}
               </button>
             )
           })}
@@ -300,19 +266,8 @@ export function IncidentForm({ onSuccess }: { onSuccess?: () => void }) {
       </div>
 
       {/* ── Description text (optional) ── */}
-      <div style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: GPT_T.ink70,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            marginBottom: 6,
-          }}
-        >
-          {t.incidents.form.text}
-        </div>
+      <div style={{ marginBottom: 15 }}>
+        <FieldLabel>{t.incidents.form.text}</FieldLabel>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -331,6 +286,8 @@ export function IncidentForm({ onSuccess }: { onSuccess?: () => void }) {
             resize: 'vertical',
             boxSizing: 'border-box',
             outline: 'none',
+            textAlign: rtl ? 'right' : 'left',
+            direction: rtl ? 'rtl' : 'ltr',
           }}
         />
       </div>
@@ -348,9 +305,14 @@ export function IncidentForm({ onSuccess }: { onSuccess?: () => void }) {
             fontSize: 13,
             fontWeight: 600,
             color: FLAG.red,
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            flexDirection: rtl ? 'row-reverse' : 'row',
           }}
         >
-          {error}
+          <AlertTri size={17} color={FLAG.red} />
+          <span style={{ flex: 1 }}>{error}</span>
         </div>
       )}
 
@@ -358,11 +320,7 @@ export function IncidentForm({ onSuccess }: { onSuccess?: () => void }) {
       <button
         type="submit"
         disabled={submitting}
-        style={{
-          ...BUTTON_PRIMARY,
-          width: '100%',
-          opacity: submitting ? 0.7 : 1,
-        }}
+        style={{ ...BUTTON_PRIMARY, width: '100%', opacity: submitting ? 0.7 : 1 }}
       >
         {submitting ? t.incidents.form.submitting : t.incidents.form.submit}
       </button>

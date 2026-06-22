@@ -457,7 +457,7 @@ function Shell() {
 
         {route.name === 'incidents' && (
           <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
-            <IncidentScreen />
+            <IncidentScreen onReportPowercut={() => openReport('out', null)} />
           </Suspense>
         )}
 

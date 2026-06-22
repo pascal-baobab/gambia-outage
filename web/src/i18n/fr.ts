@@ -838,7 +838,12 @@ export const fr: Strings = {
     title: 'Signalements d\'incidents',
     sub: 'Incidents civiques liés aux pluies signalés par les voisins',
     report: 'Signaler un incident',
+    reportPowercut: 'Signaler une coupure',
+    newReport: 'Nouveau signalement',
+    close: 'Fermer',
+    powercutSince: 'Dans le noir depuis',
     categories: {
+      powercut: 'Coupure de courant',
       flooding: 'Inondation',
       road: 'Route / Pont bloqué',
       water: 'Approvisionnement en eau',
@@ -850,6 +855,7 @@ export const fr: Strings = {
     form: {
       photo: 'Photo (obligatoire)',
       photoHint: 'Prenez ou choisissez une photo comme preuve',
+      evidence: 'Preuve',
       category: 'Catégorie',
       text: 'Description (facultative)',
       textPlaceholder: 'Décrivez ce que vous voyez…',

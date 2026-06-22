@@ -842,7 +842,12 @@ export const en = {
     title: 'Incident Reports',
     sub: 'Rain-driven civic incidents reported by neighbours',
     report: 'Report an incident',
+    reportPowercut: 'Report a power cut',
+    newReport: 'New report',
+    close: 'Close',
+    powercutSince: 'Dark since',
     categories: {
+      powercut: 'Power cut',
       flooding: 'Flooding',
       road: 'Road / Bridge blocked',
       water: 'Water supply',
@@ -854,6 +859,7 @@ export const en = {
     form: {
       photo: 'Photo (required)',
       photoHint: 'Take or choose a photo as evidence',
+      evidence: 'Evidence',
       category: 'Category',
       text: 'Description (optional)',
       textPlaceholder: 'Describe what you see…',

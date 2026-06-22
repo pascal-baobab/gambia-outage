@@ -839,7 +839,12 @@ export const ar: Strings = {
     title: 'بلاغات الحوادث',
     sub: 'حوادث مدنية مرتبطة بالأمطار يبلّغ عنها الجيران',
     report: 'الإبلاغ عن حادثة',
+    reportPowercut: 'الإبلاغ عن انقطاع الكهرباء',
+    newReport: 'بلاغ جديد',
+    close: 'إغلاق',
+    powercutSince: 'في الظلام منذ',
     categories: {
+      powercut: 'انقطاع الكهرباء',
       flooding: 'فيضان',
       road: 'طريق / جسر مسدود',
       water: 'إمداد المياه',
@@ -851,6 +856,7 @@ export const ar: Strings = {
     form: {
       photo: 'صورة (مطلوبة)',
       photoHint: 'التقط صورة أو اختر واحدة دليلاً على الحادثة',
+      evidence: 'دليل',
       category: 'الفئة',
       text: 'الوصف (اختياري)',
       textPlaceholder: 'صِف ما تراه…',

@@ -19,13 +19,14 @@ import { displayStatus } from '@/lib/status'
 import { baselineOn } from '@/lib/launch'
 
 // Category → token color map (D-12: NO raw hex literals — all values from tokens.ts).
-// flooding=FLAG.blue, road=ACCENT.amber, water=ACCENT.tile5, electricity=ACCENT.star,
-// waste=GPT_T.ink45, building=FLAG.red, other=ACCENT.tile4
+// Locked palette 2026-06-22 (mirrors incidentVisuals.CATEGORY_COLOR): flooding=FLAG.blue,
+// road=ACCENT.star (gold), water=ACCENT.tile5 (sky), electricity=THEMES.standard.on (lit-bulb amber),
+// waste=GPT_T.ink45, building=FLAG.red, other=ACCENT.tile4 (purple).
 const INCIDENT_CATEGORY_COLOR: Record<string, string> = {
   flooding: FLAG.blue,
-  road: ACCENT.amber,
+  road: ACCENT.star,
   water: ACCENT.tile5,
-  electricity: ACCENT.star,
+  electricity: THEMES.standard.on,
   waste: GPT_T.ink45,
   building: FLAG.red,
   other: ACCENT.tile4,

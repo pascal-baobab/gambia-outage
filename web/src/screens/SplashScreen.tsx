@@ -25,7 +25,7 @@ import { Avatar } from '@/components/profile/Avatar'
 import { getAccountId, hasEstablishedAccount } from '@/lib/account'
 import { getIdentity } from '@/lib/identity'
 import { navigate } from '@/hooks/useHashRoute'
-import { isUpdateApplying } from '@/lib/appRefresh'
+import { isUpdateApplying, setSplashVisible } from '@/lib/appRefresh'
 import { APP_VERSION, APP_VERSION_DATE } from '@/lib/constants'
 
 type Concept = 'A' | 'B' | 'C'
@@ -48,12 +48,14 @@ function Bolt({ cls, fill = '#dceeff' }: { cls: string; fill?: string }) {
 // clearly before auto-entering. Tuned to: total ~4.5s, last frame (WhatsApp visible) ~3s.
 const TOTAL_MS = 4500
 const HOLD_MS = 3000
-// Extra splash hold (on top of the normal dwell) granted ONLY while a newer build's under-splash
-// reload is still mid-flight. Generous (12s) because on slow networks the new SW must precache the whole
-// build before it can activate — a short window let the user fall through onto the OLD build. The wait
-// is COMMUNICATED with an on-splash "Updating…" countdown (never a frozen splash); if it expires the app
-// enters the current build and the update applies on the next open. Kept in sync with appRefresh ARM_WINDOW_MS.
-const UPDATE_HOLD_MS = 12000
+// Extra splash hold (on top of the normal dwell) granted ONLY while a newer build is in flight. Generous
+// (20s) because on a slow Gambian link the new SW must precache the whole build (~1.8MB) before it can
+// ACTIVATE — and the reload now fires on that activation (appRefresh watches the worker's statechange),
+// so it lands UNDER the splash as long as the install completes within this hold. The wait is COMMUNICATED
+// with an on-splash "Updating…" countdown (never a frozen splash). If it still expires (pathologically
+// slow install), the app enters and a tap-to-reload pill (go-stale-build) surfaces — the update is never
+// lost. No longer a wall-clock arm: appRefresh reloads whenever activation happens, not on a timer.
+const UPDATE_HOLD_MS = 20000
 
 export function SplashScreen({
   onDone,
@@ -84,6 +86,13 @@ export function SplashScreen({
   useEffect(() => {
     if (!hasEstablishedAccount()) return
     getAccountId().then((id) => { const i = getIdentity(id); setAcct({ avatarId: i.avatarId, nickname: (i.nickname || '').trim() }) }).catch(() => {})
+  }, [])
+
+  // Tell appRefresh the splash is masking the screen → a newer-build reload happens silently UNDER the
+  // splash; once we unmount (user is in the app) a late update surfaces a tap-to-reload pill instead.
+  useEffect(() => {
+    setSplashVisible(true)
+    return () => setSplashVisible(false)
   }, [])
 
   function enterAccount(e: React.MouseEvent) {

@@ -173,7 +173,13 @@ export function initPwa() {
   // rule. PROD-only: there is no built sw.js in dev (devOptions.enabled=false), so registering would 404.
   if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).catch(() => { /* registration failed — app still works online */ })
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/', updateViaCache: 'none' })
+        // Kick an explicit update check the moment registration resolves — on a slow link the app's
+        // open-effect (appRefresh) may have run before register() settled; this guarantees discovery
+        // starts as soon as the worker is live. appRefresh's ready-based tracking then catches it.
+        .then((reg) => { reg.update().catch(() => { /* offline / no update */ }) })
+        .catch(() => { /* registration failed — app still works online */ })
     })
   }
 }

@@ -8,7 +8,9 @@ import { useNotifStore, shouldFirePulse } from '@/app/notifStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { Providers } from '@/app/providers'
-import { applyVersionUpdateOnOpen, checkForUpdate } from '@/lib/appRefresh'
+import { applyVersionUpdateOnOpen, checkForUpdate, isStaleBuild, STALE_BUILD_EVENT } from '@/lib/appRefresh'
+import { checkBuildStamp } from '@/lib/versionCheck'
+import { GPT_T, GPT_FONT } from '@/lib/tokens'
 import { useAppStore } from '@/app/store'
 import { useHashRoute, navigate } from '@/hooks/useHashRoute'
 import { useSnapshot, useQuickReport } from '@/hooks/useData'
@@ -85,15 +87,27 @@ function Shell() {
   // to the foreground we only refetch data + re-check for an update (no reload, so it stays smooth).
   useEffect(() => {
     applyVersionUpdateOnOpen()
+    void checkBuildStamp() // SW-independent belt: detect a stale build even if the SW path goes silent
     void queryClient.invalidateQueries()
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return
       checkForUpdate()
+      void checkBuildStamp()
       void queryClient.invalidateQueries()
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [queryClient])
+
+  // Tap-to-reload pill: a newer build was found but couldn't be applied silently under the splash
+  // (the user is already in the app, or the SW path went silent / a resume-from-suspension). Listens
+  // for the go-stale-build event; only rendered once the splash is gone (see below).
+  const [staleBuild, setStaleBuild] = useState(isStaleBuild())
+  useEffect(() => {
+    const onStale = () => setStaleBuild(true)
+    window.addEventListener(STALE_BUILD_EVENT, onStale)
+    return () => window.removeEventListener(STALE_BUILD_EVENT, onStale)
+  }, [])
   // SSE realtime → debounced query invalidation. Mounted once here; internally
   // gated behind data-saver (falls back to 30s polling when on).
   useRealtime()
@@ -544,6 +558,21 @@ function Shell() {
               beginSplashFade()
             }}
           />
+        </div>
+      )}
+
+      {/* Stale-build pill — a newer build is deployed but couldn't be applied silently under the splash
+          (user already in-app, resume-from-suspension, or the SW path went silent). Non-blocking; one tap
+          reloads onto the latest. Only after the splash is gone so it never competes with the launch swap. */}
+      {staleBuild && splashPhase === 'gone' && (
+        <div style={{ position: 'fixed', left: 0, right: 0, top: 'calc(env(safe-area-inset-top, 0px) + 64px)', display: 'flex', justifyContent: 'center', zIndex: 5500, pointerEvents: 'none' }}>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ pointerEvents: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8, background: GPT_T.ink, color: '#fff', border: 'none', borderRadius: 999, padding: '10px 18px', fontFamily: GPT_FONT, fontSize: 13.5, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 24px rgba(15,23,34,0.3)' }}
+          >
+            <span className="go-stale-dot" aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: '#fff', display: 'inline-block' }} />
+            {t.header.refresh}
+          </button>
         </div>
       )}
 

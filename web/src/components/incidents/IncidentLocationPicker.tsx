@@ -8,8 +8,17 @@
 // Tile provider: SAME CARTO Positron URL + attribution as GambiaMapLive — no new tile provider (D-12).
 import { useEffect, useRef } from 'react'
 import type { Map as LeafletMap, Marker } from 'leaflet'
-import { GPT_T } from '@/lib/tokens'
+import { GPT_T, FLAG } from '@/lib/tokens'
 import { useT } from '@/i18n/useT'
+import { rgba } from './incidentVisuals'
+
+// Inline SVG pin (the design's red teardrop) as a divIcon — Leaflet's DEFAULT marker loads
+// marker-icon.png from its dist path, which Vite's bundler rewrites/breaks, so the pin renders as a
+// broken image ("??"). A divIcon has NO external image dependency. Token-only (D-12); '#fff' the lone literal.
+const PIN_SVG =
+  `<svg viewBox="0 0 24 34" width="30" height="42" style="display:block;filter:drop-shadow(0 2px 3px ${rgba(GPT_T.ink, 0.35)})">` +
+  `<path d="M12 33s10-9.2 10-19A10 10 0 1 0 2 14c0 9.8 10 19 10 19Z" fill="${FLAG.red}" stroke="#fff" stroke-width="2"/>` +
+  `<circle cx="12" cy="14" r="3.6" fill="#fff"/></svg>`
 
 export function IncidentLocationPicker({
   lat,
@@ -63,8 +72,15 @@ export function IncidentLocationPicker({
           '&copy; <a href="https://carto.com/attributions">CARTO</a>',
       }).addTo(map)
 
-      // Draggable marker — the user drags or taps to correct the GPS fix (D-10).
-      const marker = L.marker([lat, lng], { draggable: true }).addTo(map)
+      // Draggable marker — the user drags or taps to correct the GPS fix (D-10). Custom divIcon
+      // SVG pin (no Leaflet default PNG → no broken-image "??"). Anchor at the tip (bottom-centre).
+      const pinIcon = L.divIcon({
+        className: 'go-incident-pin',
+        html: PIN_SVG,
+        iconSize: [30, 42],
+        iconAnchor: [15, 42],
+      })
+      const marker = L.marker([lat, lng], { draggable: true, icon: pinIcon }).addTo(map)
       markerRef.current = marker
 
       // Drag: update position when the marker is dropped.

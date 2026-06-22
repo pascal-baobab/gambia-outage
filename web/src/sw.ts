@@ -15,9 +15,23 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 
 declare const self: ServiceWorkerGlobalScope
 
-// take over promptly (registerType: autoUpdate)
+// Take over promptly (registerType: autoUpdate). THREE coordinated pieces — all required for iOS
+// standalone PWAs to actually swap onto a new build (see lib/appRefresh.ts for the page side):
+//  1. Eager top-level skipWaiting() — the belt: a freshly-installed worker doesn't park in 'waiting'.
+//  2. A SKIP_WAITING message handler — the page posts this the instant the new worker reaches
+//     'installed' (on iOS the worker often skips a stable 'waiting' phase, so the page can't rely on
+//     reg.waiting being non-null; the message is the reliable nudge).
+//  3. clients.claim() WRAPPED IN event.waitUntil() — THE critical iOS fix: a bare claim() can let the
+//     'activate' handler settle before the claim promise resolves, so the already-open standalone
+//     client is never claimed → 'controllerchange' never fires → the page never reloads onto the new
+//     build. waitUntil keeps activate alive until the claim completes.
 self.skipWaiting()
-self.addEventListener('activate', () => self.clients.claim())
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') void self.skipWaiting()
+})
+self.addEventListener('activate', (event: ExtendableEvent) => {
+  event.waitUntil(self.clients.claim())
+})
 
 // precache the built assets
 precacheAndRoute(self.__WB_MANIFEST)

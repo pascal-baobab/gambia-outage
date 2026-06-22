@@ -17,7 +17,7 @@ routerAdd('GET', '/sw.js', (e) => {
   return e.blob(200, 'application/javascript; charset=utf-8', $os.readFile(__hooks + '/../pb_public/sw.js'))
 })
 
-routerAdd('GET', '/registerSW.js', (e) => {
-  e.response.header().set('Cache-Control', 'no-cache, must-revalidate')
-  return e.blob(200, 'application/javascript; charset=utf-8', $os.readFile(__hooks + '/../pb_public/registerSW.js'))
-})
+// NB: the old GET /registerSW.js route was removed — the build sets vite injectRegister:false (we
+// register the SW manually in web/src/lib/pwa.ts), so no registerSW.js is emitted; serving it would
+// $os.readFile a missing file and 500. The CF cache-bypass Cache Rule may still list /registerSW.js
+// harmlessly (it matches nothing now).

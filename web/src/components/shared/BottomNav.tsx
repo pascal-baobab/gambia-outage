@@ -1,21 +1,23 @@
-// BottomNav.tsx — persistent 6-section navigation so the app is explorable: Home · Map · News ·
+// BottomNav.tsx — persistent 6-section navigation so the app is explorable: Home · Incidents · News ·
 // Community · Talk · You. Sits below the screen content (and, on Home, below the report dock). Active
 // tab in ink, others muted. On the design tokens; line-style SVG glyphs (no emoji).
+// The global Map screen (route 'map') stays reachable via Home's embedded GambiaMapLive + List's Map
+// toggle — it was swapped out of the nav for the rain-incident reports tab (Phase 07 follow-up).
 import { GPT_T, GPT_FONT, FLAG } from '@/lib/tokens'
 import { useAccountId } from '@/hooks/useAccountId'
 import { useContactRequests } from '@/hooks/useData'
 import { useT } from '@/i18n/useT'
 import { useTheme } from '@/app/theme'
 
-export type Tab = 'home' | 'map' | 'news' | 'community' | 'talk' | 'profile'
+export type Tab = 'home' | 'incidents' | 'news' | 'community' | 'talk' | 'profile'
 
 function Icon({ name, color }: { name: Tab; color: string }) {
   const common = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, style: { display: 'block' } }
   switch (name) {
     case 'home':
       return (<svg {...common}><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></svg>)
-    case 'map':
-      return (<svg {...common}><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>)
+    case 'incidents':
+      return (<svg {...common}><path d="M10.3 4.8 1.7 18.9a2 2 0 0 0 1.7 3.1h17.2a2 2 0 0 0 1.7-3.1L13.7 4.8a2 2 0 0 0-3.4 0z" /><path d="M12 9.5v4" /><path d="M12 17h.01" /></svg>)
     case 'news':
       return (<svg {...common}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 8h7M7 12h10M7 16h10" /></svg>)
     case 'community':
@@ -39,7 +41,7 @@ export function BottomNav({ active, onNav, nameClaimed }: { active: string; onNa
   const nameDot = !nameClaimed
   const TABS: { id: Tab; label: string }[] = [
     { id: 'home', label: t.nav.home },
-    { id: 'map', label: t.nav.map },
+    { id: 'incidents', label: t.nav.incidents },
     { id: 'news', label: t.nav.news },
     { id: 'community', label: t.nav.community },
     { id: 'talk', label: t.nav.talk },

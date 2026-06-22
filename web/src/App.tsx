@@ -44,6 +44,7 @@ import { TalkScreen } from '@/screens/TalkScreen.lazy'
 import { CalculatorScreen } from '@/screens/CalculatorScreen.lazy'
 import { PhotoCrushScreen } from '@/screens/PhotoCrushScreen.lazy'
 import { LeaderboardScreen } from '@/screens/LeaderboardScreen.lazy'
+import { IncidentScreen } from '@/screens/IncidentScreen.lazy'
 import { HonorsScreen } from '@/screens/HonorsScreen'
 import { AmbassadorScreen } from '@/screens/AmbassadorScreen'
 import { FirstRunOverlay } from '@/screens/FirstRunOverlay'
@@ -369,6 +370,7 @@ function Shell() {
             onNews={() => navigate({ name: 'news' })}
             onReport={(action) => openReport(action, null)}
             onOpenTool={(id) => { if (id === 'calculator') navigate({ name: 'calculator' }); if (id === 'photoCrush') navigate({ name: 'photo-crush' }) }}
+            onIncidents={() => navigate({ name: 'incidents' })}
           />
         )}
         {route.name === 'list' && (
@@ -450,6 +452,12 @@ function Shell() {
         {route.name === 'leaderboard' && (
           <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
             <LeaderboardScreen onBack={() => navigate({ name: 'home' })} />
+          </Suspense>
+        )}
+
+        {route.name === 'incidents' && (
+          <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
+            <IncidentScreen onBack={() => navigate({ name: 'home' })} />
           </Suspense>
         )}
 

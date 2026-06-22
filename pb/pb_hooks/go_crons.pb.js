@@ -47,3 +47,35 @@ cronAdd('go_name_gc', '20 0 * * *', () => {
   const released = go.releaseInactiveNames($app)
   $app.logger().info('cron go_name_gc', 'namesReleased', released)
 })
+
+// Phase 7 — TTL purge: archive incident reports older than INC_TTL_DAYS (default 10).
+// $app.delete(rec) on a record with a file field cascades the stored photo automatically
+// (PB verified behavior — discussion #6535). Runs every 6h to cap max photo age on disk.
+cronAdd('go_incident_ttl', '0 */6 * * *', () => {
+  const go = require(`${__hooks}/lib/go.js`)
+  const ttlDays = parseInt($os.getenv('INC_TTL_DAYS') || '10', 10)
+  const cutoff = new Date(Date.now() - ttlDays * 86400000)
+  const since = go.pbTime(cutoff)
+  let purged = 0
+  try {
+    const stale = $app.findRecordsByFilter('incident_reports', 'created < {:c}', '', 500, 0, { c: since })
+    stale.forEach((r) => {
+      try { $app.delete(r); purged++ } catch (err) {
+        $app.logger().error('incident_ttl: delete failed', 'id', r.id, 'err', String(err))
+      }
+    })
+  } catch (err) {
+    $app.logger().error('incident_ttl: query failed', 'err', String(err))
+  }
+  // Traffic-independent GC of the inc_rl rate-limit ledger (ip_key + created only; incRlCheck
+  // only reads the last hour). Keeps inc_rl bounded without sweeping on the create hot path.
+  let rlPurged = 0
+  try {
+    const rlSince = go.pbTime(new Date(Date.now() - 86400000))
+    $app.findRecordsByFilter('inc_rl', 'created < {:t}', '', 500, 0, { t: rlSince })
+      .forEach((r) => { try { $app.delete(r); rlPurged++ } catch (_) {} })
+  } catch (err) {
+    $app.logger().error('incident_ttl: inc_rl gc failed', 'err', String(err))
+  }
+  $app.logger().info('cron go_incident_ttl', 'purged', purged, 'rlPurged', rlPurged, 'ttlDays', ttlDays)
+})

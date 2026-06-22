@@ -374,3 +374,63 @@ export interface AmbassadorEntry {
 
 export const fetchAmbassadors = () =>
   getJSON<{ ambassadors: AmbassadorEntry[] }>('/ambassadors').then((d) => d.ambassadors)
+
+// ── Incident reports (anonymous, GPS-tagged, photo-required) ─────────────────
+// Photos are EXIF-stripped server-side (Plan 07-02 onRecordAfterCreateSuccess). The client
+// never constructs a raw original URL — it renders whatever photoUrl the feed returns.
+// POST goes to the PB native records route (multipart), NOT /api/go/* (exempt from 16 KB cap).
+export type IncidentRow = {
+  id: string
+  category: string
+  text: string
+  lat: number
+  lng: number
+  photoUrl: string | null
+  createdAt: string
+  ago: string
+}
+export type IncidentFeedResp = { rows: IncidentRow[] }
+
+/** Submit an anonymous incident report with a required photo blob.
+ *  POSTs multipart FormData to the PB native records route. DO NOT set Content-Type
+ *  manually — the browser sets the multipart boundary automatically.
+ *  Mirrors createQuestion (lines 226-254) for error parsing and throw pattern. */
+export async function submitIncident(input: {
+  category: string
+  text: string
+  lat: number
+  lng: number
+  photo: Blob
+}): Promise<IncidentRow> {
+  const fd = new FormData()
+  fd.set('category', input.category)
+  fd.set('text', input.text)
+  fd.set('lat', String(input.lat))
+  fd.set('lng', String(input.lng))
+  fd.set('photo', input.photo, 'incident.jpg')
+  const res = await fetch('/api/collections/incident_reports/records', { method: 'POST', body: fd })
+  if (!res.ok) {
+    let message = 'Could not submit — try again.'
+    try {
+      const b = (await res.json()) as { message?: string; data?: Record<string, { message?: string }> }
+      if (b?.message) message = b.message
+      if (b?.data) { const f = Object.values(b.data).find((x) => x?.message); if (f?.message) message = f.message }
+    } catch { /* */ }
+    throw new ReportError(message)
+  }
+  const r = (await res.json()) as { id: string; category?: string; text?: string; lat?: number; lng?: number; photo?: string; created: string }
+  return {
+    id: r.id,
+    category: r.category ?? input.category,
+    text: r.text ?? input.text,
+    lat: r.lat ?? input.lat,
+    lng: r.lng ?? input.lng,
+    photoUrl: r.photo ? `/api/files/incident_reports/${r.id}/${r.photo}?thumb=600x0` : null,
+    createdAt: r.created,
+    ago: 'now',
+  }
+}
+
+/** Fetch the chronological incident feed, optionally filtered by category. */
+export const fetchIncidents = (category = '', limit = 50, offset = 0) =>
+  getJSON<IncidentFeedResp>('/incidents?category=' + encodeURIComponent(category) + '&limit=' + limit + '&offset=' + offset)

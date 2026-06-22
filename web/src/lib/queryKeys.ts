@@ -19,4 +19,6 @@ export const qk = {
   leaderboard: (zone: string, week: string) => ['leaderboard', zone, week] as const,
   contactRequests: (account: string) => ['contact-requests', account] as const,
   ambassadors: ['ambassadors'] as const,
+  // Incident feed — keyed by category ('' = all categories). 30s staleTime in useIncidentFeed.
+  incidents: (category: string) => ['incidents', category] as const,
 }

@@ -72,4 +72,43 @@ LBCODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/go/leaderboar
 # Manual-Only verification in 06-VALIDATION.md.
 grep -q "leaderboard: 'leaderboard_scores'" pb/pb_hooks/lib/go.js && pass "leaderboard mod-delete registered (MOD_DELETE_COLLECTIONS)" || fail "leaderboard not in MOD_DELETE_COLLECTIONS"
 
+# ── Phase 7: incidents (INC-04, INC-05, INC-06) ──────────────────────────────
+# INC-05: mod-delete coverage — static map assertion (live moderator not scriptable in smoke)
+grep -q "incident: 'incident_reports'" pb/pb_hooks/lib/go.js && pass "incident mod-delete registered (MOD_DELETE_COLLECTIONS)" || fail "incident not in MOD_DELETE_COLLECTIONS"
+
+# INC-04: TTL cron exists — static assertion
+grep -q "go_incident_ttl" pb/pb_hooks/go_crons.pb.js && pass "incident TTL cron registered (go_incident_ttl)" || fail "incident TTL cron missing from go_crons.pb.js"
+
+# INC-06 (geo-gate): geo-gate present in incident hook — static assertion
+grep -q "geoAllowed" pb/pb_hooks/go_incidents.pb.js && pass "incident hook contains geo-gate (geoAllowed)" || fail "incident hook missing geoAllowed check"
+
+# INC-06 (real create): POST multipart — proves HTTP 200 AND a returned record id.
+# A bare "status != 413" check is NOT sufficient (a geo-rejection 400 is also not 413).
+# The canonical INC-06 proof is 200 + "id" in the JSON body.
+# Generate a minimal 1×1 JPEG inline (base64 → temp file) so the test is self-contained.
+SMOKE_JPEG=$(mktemp /tmp/smoke-incident-XXXXXX.jpg)
+printf '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8U\nHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwL\nDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIy\nMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/E\nABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAA\nAAAAAAAAAAAAAAAAEP/aAAwDAQACEQMRAD8AJQAB/9k=' | base64 --decode > "$SMOKE_JPEG" 2>/dev/null || true
+
+INC_BODY=$(curl -s -o /tmp/smoke-inc-resp.txt -w '%{http_code}' \
+  -F "category=flooding" \
+  -F "text=smoke-test" \
+  -F "lat=13.45" \
+  -F "lng=-16.57" \
+  -F "photo=@${SMOKE_JPEG}" \
+  "$BASE/api/collections/incident_reports/records" || true)
+INC_RESP=$(cat /tmp/smoke-inc-resp.txt 2>/dev/null || echo "")
+rm -f "$SMOKE_JPEG" /tmp/smoke-inc-resp.txt
+
+# Primary assertion: HTTP 200 AND body contains a record id (real create succeeded)
+if [ "$INC_BODY" = "200" ] && echo "$INC_RESP" | grep -q '"id"'; then
+  pass "incident create: 200 + record id returned (INC-06)"
+else
+  # Secondary check: not-413 is paired with the 200+id failure for diagnostics only
+  if [ "$INC_BODY" != "413" ] && [ "$INC_BODY" != "" ]; then
+    fail "incident create: expected 200+id but got HTTP $INC_BODY (body-cap exempt but create did not succeed; backend may be absent)"
+  else
+    fail "incident create: HTTP $INC_BODY (want 200 + record id) — INC-06 backend absent or geo-blocked"
+  fi
+fi
+
 echo "Smoke test PASSED → $BASE"

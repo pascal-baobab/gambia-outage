@@ -1612,6 +1612,59 @@ function lbRlCheck(app, ipk) {
     return true // ledger trouble must never take the submit endpoint down
   }
 }
+// Per-IP incident-photo upload rate limit — verbatim copy of lbRlCheck (lb_rl → inc_rl,
+// LB_IP_HOURLY → INC_IP_HOURLY, default 5). Holds ONLY ip_key + created; self-pruning +
+// day-old sweep; fail-open on missing ipk and on any ledger error (INC-06).
+function incRlCheck(app, ipk) {
+  if (!ipk) return true // no resolvable IP (tests, internal) — never block on guard plumbing
+  const cap = parseInt(env('INC_IP_HOURLY', '5'), 10)
+  const hourAgo = pbTime(new Date(Date.now() - 3600000))
+  try {
+    // self-cleaning: drop only THIS key's rows older than the window (cheap, per-key).
+    // Global day-old GC lives in the go_incident_ttl cron so it never runs on the hot path.
+    app.findRecordsByFilter('inc_rl', 'ip_key = {:k} && created < {:t}', '', 200, 0, { k: ipk, t: hourAgo })
+      .forEach((r) => { try { app.delete(r) } catch (_) {} })
+    const recent = app.findRecordsByFilter('inc_rl', 'ip_key = {:k} && created >= {:t}', '', cap + 1, 0, { k: ipk, t: hourAgo })
+    if (recent.length >= cap) return false
+    const row = new Record(app.findCollectionByNameOrId('inc_rl'))
+    row.set('ip_key', ipk)
+    app.save(row)
+    return true
+  } catch (_) {
+    return true // ledger trouble must never take the upload endpoint down
+  }
+}
+// Incident feed row shape — anonymous ONLY: no rl_key, no ip_key, no account_id (invariant #1).
+// photoUrl uses the stored file directly (already EXIF-free after the onRecordAfterCreateSuccess
+// strip); ?thumb=600x0 is a bandwidth-only display optimisation.
+function buildIncidentFeed(app, category, limit, offset) {
+  const VALID_CATEGORIES = ['flooding', 'road', 'water', 'electricity', 'waste', 'building', 'other']
+  const n = Math.max(1, Math.min(100, parseInt(limit, 10) || 50))
+  const off = Math.max(0, parseInt(offset, 10) || 0)
+  let filter = 'hidden = false'
+  const params = {}
+  const cat = String(category || '')
+  if (cat && VALID_CATEGORIES.includes(cat)) {
+    filter += ' && category = {:c}'
+    params.c = cat
+  }
+  const rows = app.findRecordsByFilter('incident_reports', filter, '-created', n, off, params)
+  return {
+    rows: rows.map((r) => {
+      const img = r.get('photo')
+      return {
+        id: r.id,
+        category: r.getString('category'),
+        text: r.getString('text'),
+        lat: r.get('lat'),
+        lng: r.get('lng'),
+        photoUrl: img ? '/api/files/incident_reports/' + r.id + '/' + img + '?thumb=600x0' : null,
+        createdAt: r.getString('created'),
+        ago: relAgo(r.getString('created')),
+      }
+    }),
+  }
+}
 // Read shape — pseudonym + content ONLY (no zone/week/identifier). Mirrors postShape's discipline.
 function leaderboardRowShape(app, r) {
   return {
@@ -1738,7 +1791,7 @@ function deleteQuestion(app, body) {
 // entirely inside the pseudonym layer — it carries no device dedupe key and never touches the anonymous
 // outage stream.
 const MOD_DELETE_HOURLY = 1000 // bound the blast radius if a moderator capability ever leaks
-const MOD_DELETE_COLLECTIONS = { comment: 'comments', question: 'questions', post: 'posts', community_link: 'community_links', social_link: 'social_links', leaderboard: 'leaderboard_scores' }
+const MOD_DELETE_COLLECTIONS = { comment: 'comments', question: 'questions', post: 'posts', community_link: 'community_links', social_link: 'social_links', leaderboard: 'leaderboard_scores', incident: 'incident_reports' }
 
 function isModeratorAccount(app, account) {
   if (!ACCT_RE.test(String(account))) return false
@@ -2382,6 +2435,8 @@ module.exports = {
   createPost, createComment, saveIntro, socialProfile, buildFeed, buildZoneComments, buildComments,
   // Phase 6 — per-zone Photo-Crush leaderboard (lbRlCheck/leaderboardRowShape stay internal)
   submitScore, buildLeaderboard,
+  // Phase 7 — anonymous incident reports (incRlCheck/buildIncidentFeed; ledger stays internal)
+  incRlCheck, buildIncidentFeed,
   createQuestion, buildQuestions, buildQuestionThread, questionShape, updateQuestion, deleteQuestion,
   modDelete, isModeratorAccount,
   buildSocial, likeSocial,

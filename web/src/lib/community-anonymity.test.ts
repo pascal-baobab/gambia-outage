@@ -161,6 +161,48 @@ describe('community anonymity invariants', () => {
   })
 
   // ---------------------------------------------------------------------------
+  // INC-01 / D-02 / D-03 — Incident-reports P0 source-scan (invariant #1 + #4)
+  //
+  // The incident feed is a new anonymous surface. The P0 risk is a report/pseudonym
+  // identifier leaking onto an incident row, permanently relinking it to a reporter.
+  // These assertions make such a leak a build failure:
+  //   - incident_reports collection carries NONE of account_id/report_id/event_id.
+  //   - inc_rl (per-IP ledger) carries NO account_id/category/report_id.
+  //   - the incident create hook (go_incidents.pb.js) never calls r.set('account_id', ...)
+  //     or r.set('report_id', ...) or r.set('event_id', ...).
+  // These tests are RED until Plan 07-02 creates the migration + hook clean.
+  // ---------------------------------------------------------------------------
+  it('incident_reports collection carries NO report/pseudonym identifier (P0 D-02)', () => {
+    const mig = read('pb/pb_migrations/1782600000_incidents.js')
+    const i = mig.indexOf("name: 'incident_reports'")
+    const j = mig.indexOf("name: 'inc_rl'")
+    expect(i).toBeGreaterThan(-1)
+    expect(j).toBeGreaterThan(i)
+    const incBlock = mig.slice(i, j)
+    expect(/name: ['"]account_id/.test(incBlock)).toBe(false)
+    expect(/name: ['"]report_id/.test(incBlock)).toBe(false)
+    expect(/name: ['"]event_id/.test(incBlock)).toBe(false)
+  })
+
+  it('inc_rl ledger carries only ip_key + created (no account_id/category/report_id)', () => {
+    const mig = read('pb/pb_migrations/1782600000_incidents.js')
+    const j = mig.indexOf("name: 'inc_rl'")
+    expect(j).toBeGreaterThan(-1)
+    const ledgerBlock = mig.slice(j)
+    expect(/name: ['"]account_id/.test(ledgerBlock)).toBe(false)
+    expect(/name: ['"]category/.test(ledgerBlock)).toBe(false)
+    expect(/name: ['"]report_id/.test(ledgerBlock)).toBe(false)
+  })
+
+  it('incident create hook never sets a forbidden identifier (P0)', () => {
+    // Note: set('photo-'/set('photo+' are legitimate PB file-replace modifiers — NOT forbidden.
+    const hook = read('pb/pb_hooks/go_incidents.pb.js')
+    expect(/set\(['"]account_id/.test(hook)).toBe(false)
+    expect(/set\(['"]report_id/.test(hook)).toBe(false)
+    expect(/set\(['"]event_id/.test(hook)).toBe(false)
+  })
+
+  // ---------------------------------------------------------------------------
   // NOTIF-05 / D-15 — Notification payload privacy scan (P0 invariant #4)
   //
   // Notification items MUST NOT carry report_id, event_id, rl_key, or ip_key.

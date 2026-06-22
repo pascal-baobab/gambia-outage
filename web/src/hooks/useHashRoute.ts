@@ -19,6 +19,7 @@ export type Route =
   | { name: 'calculator' }
   | { name: 'photo-crush' }
   | { name: 'leaderboard' }
+  | { name: 'incidents' }
 
 function parse(hash: string): Route {
   const h = hash.replace(/^#/, '')
@@ -39,6 +40,7 @@ function parse(hash: string): Route {
   if (head === 'calculator') return { name: 'calculator' }
   if (head === 'photo-crush') return { name: 'photo-crush' }
   if (head === 'leaderboard') return { name: 'leaderboard' }
+  if (head === 'incidents') return { name: 'incidents' }
   return { name: 'home' }
 }
 
@@ -85,6 +87,9 @@ export function navigate(route: Route): void {
       break
     case 'leaderboard':
       window.location.hash = '#/leaderboard'
+      break
+    case 'incidents':
+      window.location.hash = '#/incidents'
       break
     case 'zone':
       window.location.hash = `#/zone/${encodeURIComponent(route.id)}`

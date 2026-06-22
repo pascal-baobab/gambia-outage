@@ -12,10 +12,24 @@
 import { useEffect, useRef } from 'react'
 import type { Map as LeafletMap, CircleMarker } from 'leaflet'
 import type { Snapshot } from '@/lib/types'
+import type { IncidentRow } from '@/lib/api'
 import { useAppStore } from '@/app/store'
-import { THEMES, FLAG } from '@/lib/tokens'
+import { THEMES, FLAG, ACCENT, GPT_T } from '@/lib/tokens'
 import { displayStatus } from '@/lib/status'
 import { baselineOn } from '@/lib/launch'
+
+// Category → token color map (D-12: NO raw hex literals — all values from tokens.ts).
+// flooding=FLAG.blue, road=ACCENT.amber, water=ACCENT.tile5, electricity=ACCENT.star,
+// waste=GPT_T.ink45, building=FLAG.red, other=ACCENT.tile4
+const INCIDENT_CATEGORY_COLOR: Record<string, string> = {
+  flooding: FLAG.blue,
+  road: ACCENT.amber,
+  water: ACCENT.tile5,
+  electricity: ACCENT.star,
+  waste: GPT_T.ink45,
+  building: FLAG.red,
+  other: ACCENT.tile4,
+}
 
 const ME_TTL_MS = 5 * 60 * 1000 // "ME" marker lifetime: 5 minutes, then it blends in
 
@@ -43,9 +57,11 @@ const CARTO_ATTRIBUTION =
 export default function GambiaMapLive({
   snapshot,
   onPin,
+  incidents,
 }: {
   snapshot: Snapshot
   onPin: (id: string) => void
+  incidents?: IncidentRow[]
 }) {
   const elRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<LeafletMap | null>(null)
@@ -177,6 +193,48 @@ export default function GambiaMapLive({
         markers.set(q.id, marker)
       }
 
+      // ── Incident markers — one circleMarker per incident, color-coded by category ──
+      // Uses INCIDENT_CATEGORY_COLOR (token-only, D-12). bindPopup (not bindTooltip) for
+      // tap-stable display on mobile. markers.set(inc.id, ...) so markers.clear() cleanup
+      // handles them alongside the outage pins.
+      for (const inc of incidents ?? []) {
+        if (typeof inc.lat !== 'number' || typeof inc.lng !== 'number') continue
+        const color = INCIDENT_CATEGORY_COLOR[inc.category] ?? ACCENT.tile4
+        // Build the popup with DOM nodes + textContent, NEVER string-concatenated HTML:
+        // inc.text is reporter-supplied UGC and bindPopup is an HTML sink. Server tag-strip
+        // is a content cleaner, not an HTML-context encoder (an unclosed `<img onerror=…`
+        // survives it), so escape structurally at the sink instead.
+        const popup = document.createElement('div')
+        const heading = document.createElement('strong')
+        heading.textContent = inc.category
+        popup.appendChild(heading)
+        if (inc.text) {
+          const p = document.createElement('p')
+          p.style.margin = '4px 0 0'
+          p.textContent = inc.text
+          popup.appendChild(p)
+        }
+        if (inc.photoUrl) {
+          const img = document.createElement('img')
+          img.src = inc.photoUrl
+          img.width = 120
+          img.alt = 'incident photo'
+          img.style.cssText = 'margin-top:6px;border-radius:4px;display:block'
+          popup.appendChild(img)
+        }
+        const incMarker = L.circleMarker([inc.lat, inc.lng], {
+          radius: 7,
+          color,
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.8,
+          interactive: true,
+        })
+          .bindPopup(popup)
+          .addTo(map)
+        markers.set(inc.id, incMarker)
+      }
+
       // Frame The Gambia around the macro pins.
       if (snapshot.macros.length > 0) {
         const bounds = L.latLngBounds(
@@ -205,11 +263,12 @@ export default function GambiaMapLive({
         mapRef.current = null
       }
     }
-    // Re-init on snapshot or theme change. Theme flip is rare; snapshot changes
-    // re-draw pins with fresh status colours/rings. (SSE updates arrive via a
-    // snapshot refetch → new snapshot prop → re-init, which is acceptable at 7
-    // pins; patching markers in place is the future optimisation.)
-  }, [snapshot, themeName])
+    // Re-init on snapshot, theme, or incidents change. Theme flip is rare; snapshot changes
+    // re-draw pins with fresh status colours/rings. incidents triggers re-init when the feed
+    // updates so new/removed incident markers are reflected immediately.
+    // (SSE updates arrive via a snapshot refetch → new snapshot prop → re-init, which is
+    // acceptable at 7 pins; patching markers in place is the future optimisation.)
+  }, [snapshot, themeName, incidents])
 
   return (
     <div

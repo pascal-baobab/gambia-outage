@@ -5,7 +5,7 @@
 // view is shown with the data-saver banner. StatHero, MyAreaCard, ThumbDock and
 // the all-on EmptyState all carry over faithfully.
 import { Suspense } from 'react'
-import { GPT_T, GPT_FONT } from '@/lib/tokens'
+import { GPT_T, GPT_FONT, FLAG } from '@/lib/tokens'
 import { useTheme } from '@/app/theme'
 import type { Snapshot, MacroPin } from '@/lib/types'
 import { RightNowHero } from '@/components/shared/RightNowHero'
@@ -228,6 +228,7 @@ export function HomeScreen({
   onNews,
   onReport,
   onOpenTool,
+  onIncidents,
 }: {
   snapshot?: Snapshot
   loading: boolean
@@ -243,6 +244,8 @@ export function HomeScreen({
   onNews: () => void
   onReport: (action: 'out' | 'back') => void
   onOpenTool: (id: string) => void
+  /** Navigate to the incident reporting screen. */
+  onIncidents?: () => void
 }) {
   const th = useTheme()
   const t = useT()
@@ -351,6 +354,48 @@ export function HomeScreen({
         <CommunityStrip onCommunity={onCommunity} />
         <ContributorsBadge variant="home" />
         <ToolsHubSection onOpen={onOpenTool} />
+
+        {/* Incident reports entry point — routes to #/incidents. */}
+        {onIncidents && (
+          <button
+            onClick={onIncidents}
+            style={{
+              margin: '10px 16px 2px',
+              width: 'calc(100% - 32px)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 11,
+              textAlign: 'start',
+              padding: '10px 14px',
+              borderRadius: 14,
+              cursor: 'pointer',
+              background: GPT_T.paper,
+              border: `1px solid ${GPT_T.line}`,
+              boxShadow: '0 1px 2px rgba(15,23,34,0.04)',
+              fontFamily: GPT_FONT,
+            }}
+          >
+            <span
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: GPT_T.wash,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <GPTIcon name="on" size={17} color={FLAG.blue} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: GPT_T.ink }}>{t.incidents.title}</div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: GPT_T.ink45, marginTop: 1 }}>{t.incidents.report}</div>
+            </div>
+            <GPTIcon name="chevron" size={18} color={GPT_T.ink25} />
+          </button>
+        )}
 
         {/* "From Facebook" — owner-curated posts. On Home we show a short teaser (the full feed lives
             in the News tab) so the single scroll container stays manageable. Self-fetches; renders
